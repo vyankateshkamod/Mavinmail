@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    /* File Layout */
+    "rootDir": "./src",
+    "outDir": "./dist",
+
+    /* Module + Target */
+    "target": "es2020",                /* Output modern JS features */
+    "module": "nodenext",              /* Use Node’s ESM behavior */
+    "moduleResolution": "nodenext",    /* Ensure imports resolve correctly */
+
+    /* Environment */
+    "lib": ["esnext"],                 /* Latest JS features */
+    "types": ["node"],                 /* Enable Node.js types */
+
+    /* Output */
+    "sourceMap": true,                 /* Generate .map files for debugging */
+    "declaration": true,               /* Generate .d.ts type declarations */
+    "declarationMap": true,            /* Map .d.ts back to TS sources */
+
+    /* Type Checking */
+    "strict": true,                    /* Enable all strict checks */
+    "esModuleInterop": true,           /* Allow default imports from CJS */
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true               /* Skip type-checking node_modules */
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}

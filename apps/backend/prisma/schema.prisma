@@ -1,0 +1,33 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  connectedAccounts ConnectedAccount[]
+  preferredModel   String             @default("google/gemini-2.0-flash-exp:free")
+}
+
+model ConnectedAccount {
+  id           Int      @id @default(autoincrement())
+  provider     String   // e.g., "google"
+  email        String   // The user's Gmail address
+  accessToken  String   @db.Text // Encrypted access token
+  refreshToken String?  @db.Text // Encrypted refresh token (optional but recommended)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id])
+  userId       Int
+
+  @@unique([userId, provider])
+}

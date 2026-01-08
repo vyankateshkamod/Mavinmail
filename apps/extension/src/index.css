@@ -1,0 +1,30 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-brand-cyan: #22d3ee;
+  --color-brand-dark: #121212;
+  --color-brand-surface: #1e1e1e;
+}
+
+body {
+  background-color: var(--color-brand-dark);
+  color: white;
+}
+
+/* Custom scrollbar to match the design */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a2d36;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3e4a;
+}

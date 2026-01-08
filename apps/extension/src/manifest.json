@@ -1,0 +1,40 @@
+
+{
+  "manifest_version": 3,
+  "name": "Meeco AI - Your Everyday Email Assistant",
+  "version": "1.0",
+  "description": "A native side panel assistant.",
+  "icons": {
+    "128": "icon.png"
+  },
+  "permissions": [
+    "sidePanel",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://localhost:5001/*",
+    "https://mail.google.com/"
+  ],
+  "background": {
+    "service_worker": "src/background.ts",
+    "type": "module"
+  },
+
+  "side_panel": {
+    "default_path": "public/sidepanel.html"
+  },
+  "action": {
+    "default_title": "Open AI Assistant"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "logo.png",
+        "src/index.css",
+        "content/getEmailContent.js"
+      ],
+      "matches": ["https://mail.google.com/*"]
+    }
+  ]
+}
