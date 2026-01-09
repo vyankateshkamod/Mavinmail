@@ -384,7 +384,7 @@ function ChatScreen({ isLoggedIn, onLoginClick, activeConversationId, onConversa
               className="w-5 h-5 sm:w-6 sm:h-6 lg:w-6 lg:h-6 xl:w-7 xl:h-7 rounded-full flex-shrink-0"
             />
 
-            <div className="max-w-[85%] rounded-lg px-2.5 sm:px-3 lg:px-3.5 xl:px-4 py-1.5 sm:py-2 lg:py-2.5 xl:py-3 text-[11px] sm:text-xs lg:text-sm xl:text-base bg-[#171717] text-gray-100">
+            <div className="max-w-[99%] rounded-lg px-2.5 sm:px-3 lg:px-3.5 xl:px-4 py-1.5 sm:py-2 lg:py-2.5 xl:py-3 text-[11px] sm:text-xs lg:text-sm xl:text-base bg-[#171717] text-gray-100">
               <p className="whitespace-pre-wrap break-words">
                 Hi! It's Mavin, How can I help today?
               </p>
