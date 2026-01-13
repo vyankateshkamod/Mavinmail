@@ -157,7 +157,7 @@ export default function SummaryResultView({
           {/* Important Details */}
           {data.important_details && data.important_details.length > 0 && (
             <div>
-              <h4 className="text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">Important Details</h4>
+              <h4 className="text-xs uppercase tracking-wider text-gray-500 font-bold mb-2">Important Details</h4>
               <ul className="space-y-1.5">
                 {data.important_details.map((detail, idx) => (
                   <li key={idx} className="flex items-start gap-2 text-sm text-gray-300">
@@ -172,7 +172,7 @@ export default function SummaryResultView({
           {/* Action Items */}
           {data.action_items && data.action_items.length > 0 && (
             <div className="bg-[#121212] rounded-lg p-3 border border-[#262626]">
-              <h4 className="text-[11px] uppercase tracking-wider text-[#22d3ee] font-bold mb-2.5">Action Items</h4>
+              <h4 className="text-xs uppercase tracking-wider text-[#22d3ee] font-bold mb-2.5">Action Items</h4>
               <ul className="space-y-2">
                 {data.action_items.map((action, idx) => (
                   <li key={idx} className="flex items-start gap-2 text-sm text-white font-medium">
@@ -187,11 +187,11 @@ export default function SummaryResultView({
           {/* Footer Tags: Intent & Sentiment */}
           <div className="flex flex-wrap gap-2 pt-1">
             {data.intent && (
-              <span className={`px-2 py-1 rounded text-[10px] uppercase font-semibold border ${data.intent.toLowerCase() === 'urgent' ? 'text-orange-400 bg-orange-400/10 border-orange-400/20' :
-                  data.intent.toLowerCase() === 'request' ? 'text-blue-400 bg-blue-400/10 border-blue-400/20' :
-                    data.intent.toLowerCase() === 'meeting' ? 'text-purple-400 bg-purple-400/10 border-purple-400/20' :
-                      data.intent.toLowerCase() === 'follow-up' ? 'text-indigo-400 bg-indigo-400/10 border-indigo-400/20' :
-                        'text-gray-400 bg-[#262626] border-[#333]'
+              <span className={`px-2 py-1 rounded text-xs uppercase font-semibold border ${data.intent.toLowerCase() === 'urgent' ? 'text-orange-400 bg-orange-400/10 border-orange-400/20' :
+                data.intent.toLowerCase() === 'request' ? 'text-blue-400 bg-blue-400/10 border-blue-400/20' :
+                  data.intent.toLowerCase() === 'meeting' ? 'text-purple-400 bg-purple-400/10 border-purple-400/20' :
+                    data.intent.toLowerCase() === 'follow-up' ? 'text-indigo-400 bg-indigo-400/10 border-indigo-400/20' :
+                      'text-gray-400 bg-[#262626] border-[#333]'
                 }`}>
                 {data.intent}
               </span>

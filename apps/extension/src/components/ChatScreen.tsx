@@ -379,17 +379,17 @@ function ChatScreen({ isLoggedIn, onLoginClick, activeConversationId, onConversa
 
   return (
     <div className="flex h-screen flex-col bg-[#121212] text-white font-sans relative">
-      <main className="flex-1 p-3 sm:p-3.5 lg:p-4 xl:p-5 space-y-3 sm:space-y-3.5 lg:space-y-4 xl:space-y-5 overflow-y-auto">
+      <main className="flex-1 p-3 sm:p-4 lg:p-5 space-y-3 sm:space-y-4 lg:space-y-5 overflow-y-auto">
 
         <div className="flex w-full items-center justify-between">
-          <div className="flex items-start gap-2 sm:gap-2.5 lg:gap-3">
+          <div className="flex items-start gap-2.5 sm:gap-3 lg:gap-3">
             <img
               src="/logo.png"
               alt="Meeco Avatar"
-              className="w-5 h-5 sm:w-6 sm:h-6 lg:w-6 lg:h-6 xl:w-7 xl:h-7 rounded-full flex-shrink-0"
+              className="w-6 h-6 sm:w-7 sm:h-7 lg:w-7 lg:h-7 rounded-full flex-shrink-0"
             />
 
-            <div className="max-w-[99%] rounded-lg px-2.5 sm:px-3 lg:px-3.5 xl:px-4 py-1.5 sm:py-2 lg:py-2.5 xl:py-3 text-[11px] sm:text-xs lg:text-sm xl:text-base bg-[#171717] text-gray-100">
+            <div className="max-w-[99%] rounded-lg px-3 sm:px-3.5 lg:px-4 py-2 sm:py-2.5 lg:py-3 text-xs sm:text-sm lg:text-base bg-[#171717] text-gray-100">
               <p className="whitespace-pre-wrap break-words">
                 Hi! It's Mavin, How can I help today?
               </p>
@@ -400,7 +400,7 @@ function ChatScreen({ isLoggedIn, onLoginClick, activeConversationId, onConversa
           {isLoggedIn && activeConversationId && (
             <button
               onClick={() => onConversationChange(null)}
-              className="p-1 px-2 text-[10px] bg-[#262626] hover:bg-[#333] text-gray-300 rounded border border-[#333] transition-colors"
+              className="p-1.5 px-2.5 text-xs bg-[#262626] hover:bg-[#333] text-gray-300 rounded border border-[#333] transition-colors"
             >
               + New Chat
             </button>
@@ -413,7 +413,7 @@ function ChatScreen({ isLoggedIn, onLoginClick, activeConversationId, onConversa
 
 
         {/* Suggestion Buttons */}
-        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-2.5 lg:gap-3">
+        <div className="flex flex-col gap-2 sm:gap-2.5 lg:gap-3">
           {isLoggedIn && (
             <>
               <button
@@ -421,25 +421,25 @@ function ChatScreen({ isLoggedIn, onLoginClick, activeConversationId, onConversa
                   setSelectedDate("");
                   setActiveView("digest");
                 }}
-                className="px-2.5 sm:px-3 lg:px-3.5 xl:px-4 py-1.5 sm:py-2 lg:py-2.5 bg-[#171717] hover:bg-[#262626] rounded-lg transition-colors text-[11px] sm:text-xs lg:text-sm xl:text-base font-medium flex items-center gap-1 sm:gap-1.5 border border-[#262626] hover:border-[#22d3ee]"
+                className="px-3 sm:px-3.5 lg:px-4 py-2 sm:py-2.5 bg-[#171717] hover:bg-[#262626] rounded-lg transition-colors text-xs sm:text-sm lg:text-base font-medium flex items-center gap-2 border border-[#262626] hover:border-[#22d3ee] w-full text-left"
               >
-                <span className="text-[#22d3ee] text-[10px] sm:text-xs">✦</span> Summarize all emails I
+                <span className="text-[#22d3ee] text-xs sm:text-sm">✦</span> Summarize all emails I
                 received today.
               </button>
 
               {/* Date Picker Button */}
-              <div className="relative" ref={datePickerRef}>
+              <div className="relative w-full" ref={datePickerRef}>
                 <button
                   onClick={() => setShowDatePicker(!showDatePicker)}
-                  className="px-2.5 sm:px-3 lg:px-3.5 xl:px-4 py-1.5 sm:py-2 lg:py-2.5 bg-[#171717] hover:bg-[#262626] rounded-lg transition-colors text-[11px] sm:text-xs lg:text-sm xl:text-base font-medium flex items-center gap-1 sm:gap-1.5 border border-[#262626] hover:border-[#22d3ee]"
+                  className="px-3 sm:px-3.5 lg:px-4 py-2 sm:py-2.5 bg-[#171717] hover:bg-[#262626] rounded-lg transition-colors text-xs sm:text-sm lg:text-base font-medium flex items-center gap-2 border border-[#262626] hover:border-[#22d3ee] w-full text-left"
                 >
-                  <span className="text-[#22d3ee] text-[10px] sm:text-xs">📅</span> Summarize emails by date
+                  <span className="text-[#22d3ee] text-xs sm:text-sm">📅</span> Summarize emails by date
                 </button>
 
                 {showDatePicker && (
-                  <div className="absolute top-full left-0 mt-2 z-50 bg-[#171717] border border-[#262626] rounded-lg p-3 shadow-lg min-w-[280px] sm:min-w-[300px]">
+                  <div className="absolute top-full left-0 mt-2 z-50 bg-[#171717] border border-[#262626] rounded-lg p-3 shadow-lg w-full min-w-[280px]">
                     <div className="flex flex-col gap-3">
-                      <label className="text-[11px] sm:text-xs text-gray-300 font-medium">
+                      <label className="text-xs sm:text-sm text-gray-300 font-medium">
                         Select Date:
                       </label>
                       <input
@@ -447,7 +447,7 @@ function ChatScreen({ isLoggedIn, onLoginClick, activeConversationId, onConversa
                         value={selectedDate}
                         onChange={(e) => setSelectedDate(e.target.value)}
                         max={new Date().toISOString().split('T')[0]}
-                        className="bg-[#121212] border border-[#262626] rounded-lg px-3 py-2 text-[11px] sm:text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#22d3ee]"
+                        className="bg-[#121212] border border-[#262626] rounded-lg px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#22d3ee]"
                       />
                       <div className="flex gap-2">
                         <button
@@ -458,7 +458,7 @@ function ChatScreen({ isLoggedIn, onLoginClick, activeConversationId, onConversa
                             }
                           }}
                           disabled={!selectedDate}
-                          className="flex-1 px-3 py-1.5 bg-[#22d3ee] hover:bg-[#1bbccf] disabled:bg-gray-600 disabled:cursor-not-allowed text-[#121212] rounded-lg text-[11px] sm:text-xs font-medium transition-colors"
+                          className="flex-1 px-3 py-2 bg-[#22d3ee] hover:bg-[#1bbccf] disabled:bg-gray-600 disabled:cursor-not-allowed text-[#121212] rounded-lg text-xs sm:text-sm font-medium transition-colors"
                         >
                           Summarize
                         </button>
@@ -467,7 +467,7 @@ function ChatScreen({ isLoggedIn, onLoginClick, activeConversationId, onConversa
                             setShowDatePicker(false);
                             setSelectedDate("");
                           }}
-                          className="px-3 py-1.5 bg-[#262626] hover:bg-[#333] text-gray-300 rounded-lg text-[11px] sm:text-xs font-medium transition-colors"
+                          className="px-3 py-2 bg-[#262626] hover:bg-[#333] text-gray-300 rounded-lg text-xs sm:text-sm font-medium transition-colors"
                         >
                           Cancel
                         </button>
@@ -479,17 +479,17 @@ function ChatScreen({ isLoggedIn, onLoginClick, activeConversationId, onConversa
             </>
           )}
 
-          <button className="px-2.5 sm:px-3 lg:px-3.5 xl:px-4 py-1.5 sm:py-2 lg:py-2.5 bg-[#171717] hover:bg-[#262626] rounded-lg transition-colors text-[11px] sm:text-xs lg:text-sm xl:text-base font-medium flex items-center gap-1 sm:gap-1.5 border border-[#262626] hover:border-[#22d3ee]">
-            <span className="text-[#22d3ee] text-[10px] sm:text-xs">✦</span> Write a professional
+          <button className="px-3 sm:px-3.5 lg:px-4 py-2 sm:py-2.5 bg-[#171717] hover:bg-[#262626] rounded-lg transition-colors text-xs sm:text-sm lg:text-base font-medium flex items-center gap-2 border border-[#262626] hover:border-[#22d3ee] w-full text-left">
+            <span className="text-[#22d3ee] text-xs sm:text-sm">✦</span> Write a professional
             apology email.
           </button>
           {/* --- REPLACE THE OLD BUTTON WITH THE NEW ONE --- */}
           {isLoggedIn && (
             <button
               onClick={handleSummarizeClick}
-              className="px-2.5 sm:px-3 lg:px-3.5 xl:px-4 py-1.5 sm:py-2 lg:py-2.5 bg-[#171717] hover:bg-[#262626] rounded-lg transition-colors text-[11px] sm:text-xs lg:text-sm xl:text-base font-medium flex items-center gap-1 sm:gap-1.5 border border-[#262626] hover:border-[#22d3ee]"
+              className="px-3 sm:px-3.5 lg:px-4 py-2 sm:py-2.5 bg-[#171717] hover:bg-[#262626] rounded-lg transition-colors text-xs sm:text-sm lg:text-base font-medium flex items-center gap-2 border border-[#262626] hover:border-[#22d3ee] w-full text-left"
             >
-              <span className="text-[#22d3ee] text-[10px] sm:text-xs">✦</span> Summarize the current
+              <span className="text-[#22d3ee] text-xs sm:text-sm">✦</span> Summarize the current
               email
             </button>
           )}
@@ -671,8 +671,8 @@ function ChatScreen({ isLoggedIn, onLoginClick, activeConversationId, onConversa
           {/* Helper Hint */}
           {isLoggedIn && (
             <div className="flex justify-center mb-1">
-              <div className="px-2 py-1 bg-[#1E1E1E] border border-[#2A2A2A] rounded text-[10px] text-gray-500 flex items-center gap-2">
-                <span className="bg-[#2A2A2A] rounded px-1 py-0.5 text-gray-300 font-mono text-[9px]">Ctrl + A</span>
+              <div className="px-2 py-1 bg-[#1E1E1E] border border-[#2A2A2A] rounded text-xs text-gray-500 flex items-center gap-2">
+                <span className="bg-[#2A2A2A] rounded px-1 py-0.5 text-gray-300 font-mono text-[10px] sm:text-xs">Ctrl + A</span>
                 <span>for AI Autocomplete</span>
               </div>
             </div>
@@ -682,7 +682,7 @@ function ChatScreen({ isLoggedIn, onLoginClick, activeConversationId, onConversa
           {!isLoggedIn && (
             <button
               onClick={onLoginClick}
-              className="text-[11px] sm:text-xs lg:text-sm xl:text-base font-semibold bg-transparent text-gray-300 border border-[#262626] hover:border-[#22d3ee] rounded-md px-2.5 sm:px-3 lg:px-3.5 xl:px-4 py-1.5 sm:py-2 lg:py-2.5 hover:text-white transition-colors"
+              className="text-xs sm:text-sm lg:text-base xl:text-lg font-semibold bg-transparent text-gray-300 border border-[#262626] hover:border-[#22d3ee] rounded-md px-3 sm:px-3.5 lg:px-4 xl:px-5 py-2 sm:py-2.5 lg:py-3 hover:text-white transition-colors"
             >
               Log In ↗
             </button>

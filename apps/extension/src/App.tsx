@@ -11,10 +11,13 @@ import { useAuth } from './hooks/useAuth';
 
 import HistoryScreen from './components/HistoryScreen';
 import { useChatHistory } from './hooks/useChatHistory';
+import { useZoom } from './hooks/useZoom';
 
 export type Screen = 'Chat' | 'Paths' | 'History' | 'Settings' | 'Login' | 'Profile' | 'Support';
 
+
 function App() {
+  useZoom(); // Enable zoom shortcuts
   const [currentScreen, setCurrentScreen] = useState<Screen>('Chat');
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const {

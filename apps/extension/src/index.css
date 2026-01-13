@@ -6,6 +6,10 @@
   --color-brand-surface: #1e1e1e;
 }
 
+html {
+  transition: font-size 0.2s ease-out;
+}
+
 body {
   background-color: var(--color-brand-dark);
   color: white;
