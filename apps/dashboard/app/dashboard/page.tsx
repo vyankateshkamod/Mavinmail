@@ -12,6 +12,7 @@ import { ProfileView } from "./components/ProfileView"
 import { SubscriptionView } from "./components/SubscriptionView"
 import { SupportView } from "./components/SupportView"
 import { AnalyticsView } from "./components/AnalyticsView"
+import { TasksView } from "./components/TasksView"
 
 /** Internal component that uses useSearchParams */
 function DashboardPageContent() {
@@ -42,6 +43,8 @@ function DashboardPageContent() {
                 return <ProfileView />
             case "subscription":
                 return <SubscriptionView />
+            case "tasks":
+                return <TasksView />
             case "support":
                 return <SupportView />
             default:

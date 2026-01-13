@@ -286,6 +286,43 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
 };
 
 /**
+ * Get scheduled tasks
+ */
+export const getTasks = async () => {
+  try {
+    const response = await api.get('/tasks');
+    return response.data;
+  } catch (error: any) {
+    console.warn('Tasks endpoint unavailable, returning empty list:', error.message);
+    return [];
+  }
+};
+
+/**
+ * Create a new scheduled task
+ */
+export const createTask = async (taskData: any) => {
+  try {
+    const response = await api.post('/tasks', taskData);
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.error || 'Failed to create task');
+  }
+};
+
+/**
+ * Delete (cancel) a task
+ */
+export const cancelTask = async (taskId: number) => {
+  try {
+    const response = await api.delete(`/tasks/${taskId}`);
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.error || 'Failed to delete task');
+  }
+};
+
+/**
  * Fetch recent AI activity feed
  * Falls back to mock data if backend endpoint is unavailable
  */

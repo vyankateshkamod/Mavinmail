@@ -16,8 +16,11 @@ import {
     ChevronLeft,
     ChevronRight,
     Bot,
-    BarChart3
+    BarChart3,
+    Calendar
 } from "lucide-react"
+import Image from "next/image"
+import mavinlogo from "@/public/mavinlogo.png"
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
     activeView: string
@@ -29,6 +32,7 @@ interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
 export function Sidebar({ className, activeView, onViewChange, isCollapsed, toggleCollapse }: SidebarProps) {
     const navItems = [
         { name: "Dashboard", view: "dashboard", icon: LayoutDashboard },
+        { name: "Tasks", view: "tasks", icon: Calendar },
         { name: "Analytics", view: "analytics", icon: BarChart3 },
         { name: "Connected Accounts", view: "accounts", icon: Users },
         { name: "Settings", view: "settings", icon: Settings },
@@ -40,7 +44,13 @@ export function Sidebar({ className, activeView, onViewChange, isCollapsed, togg
     return (
         <div className={cn("relative flex flex-col h-screen border-r border-sidebar-border bg-sidebar transition-all duration-300", isCollapsed ? "w-16" : "w-64", className)}>
             <div className="flex items-center h-16 px-4 border-b border-sidebar-border">
-                <Bot className="w-6 h-6 text-sidebar-primary mr-2" />
+                <Image
+                    src={mavinlogo}
+                    alt="MavinMail Logo"
+                    className="w-6 h-6 mr-2"
+                    width={24}
+                    height={24}
+                />
                 {!isCollapsed && <span className="text-lg font-bold text-sidebar-foreground tracking-wider">MavinMail</span>}
             </div>
 
@@ -59,7 +69,7 @@ export function Sidebar({ className, activeView, onViewChange, isCollapsed, togg
                             )}
                             onClick={() => onViewChange(item.view)}
                         >
-                            <item.icon className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3", activeView === item.view && "stroke-[2.5px]")} />
+                            {(item.icon as any) && <item.icon className={cn("h-5 w-5", isCollapsed ? "mr-0" : "mr-3", activeView === item.view && "stroke-[2.5px]")} />}
                             {!isCollapsed && <span>{item.name}</span>}
                         </Button>
                     ))}
@@ -73,7 +83,7 @@ export function Sidebar({ className, activeView, onViewChange, isCollapsed, togg
                     className="w-full flex items-center justify-center text-sidebar-foreground/70 hover:text-sidebar-primary"
                     onClick={toggleCollapse}
                 >
-                    {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+                    {isCollapsed ? React.createElement(ChevronRight as any, { className: "h-5 w-5" }) : React.createElement(ChevronLeft as any, { className: "h-5 w-5" })}
                 </Button>
             </div>
         </div>
@@ -87,7 +97,7 @@ export function MobileSidebar({ activeView, onViewChange }: { activeView: string
         <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="md:hidden text-sidebar-foreground/70">
-                    <Menu className="h-6 w-6" />
+                    {React.createElement(Menu as any, { className: "h-6 w-6" })}
                 </Button>
             </SheetTrigger>
             <SheetContent side="left" className="p-0 bg-sidebar border-sidebar-border w-64 text-sidebar-foreground">

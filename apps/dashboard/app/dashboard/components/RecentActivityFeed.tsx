@@ -69,6 +69,11 @@ function ActivityItemRow({ activity }: { activity: ActivityItem }) {
                 <p className="text-xs text-muted-foreground/70 mt-1">
                     {formatRelativeTime(activity.timestamp)}
                 </p>
+                {activity.action === 'digest' && (activity.metadata as any)?.summary && (
+                    <div className="mt-2 p-3 bg-muted/50 rounded-md text-xs text-foreground/80 whitespace-pre-wrap leading-relaxed font-sans border border-border/50">
+                        {(activity.metadata as any).summary}
+                    </div>
+                )}
             </div>
         </div>
     );
