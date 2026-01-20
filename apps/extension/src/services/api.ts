@@ -145,3 +145,22 @@ export const getRecentActivity = async (limit: number = 10) => {
   const response = await api.get(`/dashboard/activity?limit=${limit}`);
   return response.data.activity;
 };
+
+// User Profile
+export const getUserProfile = async (): Promise<{ firstName: string; lastName: string; email: string }> => {
+  try {
+    const response = await api.get('/user/profile');
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.error || 'Failed to get profile.');
+  }
+};
+
+export const updateUserProfile = async (profile: { firstName: string; lastName: string; email: string }) => {
+  try {
+    const response = await api.put('/user/profile', profile);
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.error || 'Failed to update profile.');
+  }
+};

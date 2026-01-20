@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { User, Mail, Clock, LogOut, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
-import { getUserStats, getConnectionStatus } from '../services/api';
+import { User, Mail, Clock, LogOut, CheckCircle2, AlertCircle, RefreshCw, Camera, Save } from 'lucide-react';
+import { getUserStats, getConnectionStatus, updateUserProfile, getUserProfile } from '../services/api';
 
 interface ProfileScreenProps {
   onLogout: () => void;
@@ -12,11 +12,27 @@ interface StatsData {
   timeSavedMinutes: number;
 }
 
+interface PersonalInfo {
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
 export default function ProfileScreen({ onLogout }: ProfileScreenProps) {
   const [stats, setStats] = useState<StatsData | null>(null);
   const [connection, setConnection] = useState<{ isConnected: boolean; email?: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Personal Information state
+  const [personalInfo, setPersonalInfo] = useState<PersonalInfo>({
+    firstName: '',
+    lastName: '',
+    email: ''
+  });
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -30,14 +46,58 @@ export default function ProfileScreen({ onLogout }: ProfileScreenProps) {
         getUserStats(),
         getConnectionStatus()
       ]);
-      setStats(statsData); // Assuming statsData is now directly the StatsData object, not { success: true, stats: { ... } }
+      setStats(statsData);
       setConnection(connectionData);
+
+      // Try to get user profile, fallback to email-based info
+      try {
+        const profileData = await getUserProfile();
+        setPersonalInfo({
+          firstName: profileData.firstName || '',
+          lastName: profileData.lastName || '',
+          email: profileData.email || connectionData?.email || ''
+        });
+      } catch {
+        // Fallback: derive from email if profile not available
+        if (connectionData?.email) {
+          const emailParts = connectionData.email.split('@')[0].split('.');
+          setPersonalInfo({
+            firstName: emailParts[0]?.charAt(0).toUpperCase() + emailParts[0]?.slice(1) || '',
+            lastName: emailParts[1]?.charAt(0).toUpperCase() + emailParts[1]?.slice(1) || '',
+            email: connectionData.email
+          });
+        }
+      }
     } catch (err: any) {
       console.error('Failed to load profile data:', err);
       setError(err.message || 'Failed to load profile data. Check connection.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      setIsSaving(true);
+      await updateUserProfile(personalInfo);
+      setSaveSuccess(true);
+      setIsEditing(false);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to save profile.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleInputChange = (field: keyof PersonalInfo, value: string) => {
+    setPersonalInfo(prev => ({ ...prev, [field]: value }));
+  };
+
+  const getInitials = () => {
+    const first = personalInfo.firstName?.[0]?.toUpperCase() || '';
+    const last = personalInfo.lastName?.[0]?.toUpperCase() || '';
+    return first + last || connection?.email?.[0]?.toUpperCase() || 'U';
   };
 
   const formatInitial = (email?: string) => {
@@ -103,6 +163,89 @@ export default function ProfileScreen({ onLogout }: ProfileScreenProps) {
               Free Plan
             </span>
           </div>
+        </div>
+
+        {/* Personal Information Section */}
+        <div className="bg-[#1E1E1E] p-4 rounded-lg border border-gray-800">
+          <div className="mb-4">
+            <h2 className="text-base font-semibold text-white">Personal Information</h2>
+            <p className="text-sm text-gray-500 mt-0.5">Update your photo and personal details here.</p>
+          </div>
+
+          {/* Avatar Section */}
+          <div className="flex items-center gap-4 mb-5">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#1a3a4a] to-[#0d1f2d] flex items-center justify-center text-[#22d3ee] font-semibold text-xl border border-[#2a4a5a]">
+              {getInitials()}
+            </div>
+            <button
+              className="px-4 py-2 bg-[#262626] hover:bg-[#303030] text-gray-300 text-sm rounded-lg border border-gray-700 transition-colors flex items-center gap-2"
+              onClick={() => {/* Avatar change functionality */ }}
+            >
+              Change Avatar
+            </button>
+          </div>
+
+          {/* Name Fields */}
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">First name</label>
+              <input
+                type="text"
+                value={personalInfo.firstName}
+                onChange={(e) => handleInputChange('firstName', e.target.value)}
+                placeholder="John"
+                className="w-full bg-[#262626] border border-gray-700 rounded-lg px-3 py-2.5 text-gray-200 text-sm placeholder-gray-500 focus:outline-none focus:border-[#22d3ee]/50 focus:ring-1 focus:ring-[#22d3ee]/30 transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">Last name</label>
+              <input
+                type="text"
+                value={personalInfo.lastName}
+                onChange={(e) => handleInputChange('lastName', e.target.value)}
+                placeholder="Doe"
+                className="w-full bg-[#262626] border border-gray-700 rounded-lg px-3 py-2.5 text-gray-200 text-sm placeholder-gray-500 focus:outline-none focus:border-[#22d3ee]/50 focus:ring-1 focus:ring-[#22d3ee]/30 transition-all"
+              />
+            </div>
+          </div>
+
+          {/* Email Field */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">Email</label>
+            <input
+              type="email"
+              value={personalInfo.email}
+              onChange={(e) => handleInputChange('email', e.target.value)}
+              placeholder="john.doe@example.com"
+              className="w-full bg-[#262626] border border-gray-700 rounded-lg px-3 py-2.5 text-gray-200 text-sm placeholder-gray-500 focus:outline-none focus:border-[#22d3ee]/50 focus:ring-1 focus:ring-[#22d3ee]/30 transition-all"
+              disabled
+            />
+            <p className="text-xs text-gray-500 mt-1">Email cannot be changed as it's linked to your Gmail account.</p>
+          </div>
+
+          {/* Save Button */}
+          <button
+            onClick={handleSaveProfile}
+            disabled={isSaving}
+            className="w-full bg-[#22d3ee]/10 hover:bg-[#22d3ee]/20 text-[#22d3ee] border border-[#22d3ee]/30 py-2.5 rounded-lg font-medium transition-all text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSaving ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                Saving...
+              </>
+            ) : saveSuccess ? (
+              <>
+                <CheckCircle2 className="w-4 h-4" />
+                Saved Successfully!
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                Save Changes
+              </>
+            )}
+          </button>
         </div>
 
         {/* Usage Stats Card */}
