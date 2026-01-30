@@ -184,8 +184,7 @@ export async function getDashboardStats(userId: number): Promise<DashboardStats>
     ]);
 
     // --- LIVE STATS FETCHING ---
-    // User requested "real data fetched from backend" for today's emails.
-    // We try to fetch live stats from Gmail API if a connected account exists.
+    // Fetch real-time email counts from Gmail API with robust error handling
     let liveStats = { today: 0, total: 0, usingLive: false };
 
     try {
@@ -198,38 +197,72 @@ export async function getDashboardStats(userId: number): Promise<DashboardStats>
                 process.env.GOOGLE_CLIENT_ID!,
                 process.env.GOOGLE_CLIENT_SECRET!
             );
-            // We need to handle potential token decryption errors or refresh logic here ideally,
-            // but for a dashboard read, we'll try the access token we have.
-            oauth2Client.setCredentials({ access_token: decrypt(googleAccount.accessToken) });
+
+            // Set credentials with both access and refresh tokens for auto-refresh
+            try {
+                const credentials: any = {
+                    access_token: decrypt(googleAccount.accessToken)
+                };
+
+                // Include refresh token if available for automatic token refresh
+                if (googleAccount.refreshToken) {
+                    credentials.refresh_token = decrypt(googleAccount.refreshToken);
+                }
+
+                oauth2Client.setCredentials(credentials);
+            } catch (decryptError) {
+                console.error('[Analytics] Token decryption failed:', decryptError);
+                throw new Error('Token decryption failed');
+            }
+
             const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-            // Parallel fetch for speed
+            // Format today's date as YYYY/MM/DD for Gmail's 'after:' operator
+            const todayDateStr = `${todayStart.getFullYear()}/${String(todayStart.getMonth() + 1).padStart(2, '0')}/${String(todayStart.getDate()).padStart(2, '0')}`;
+
+            // Fetch stats in parallel for performance
             const [profileRes, todayRes] = await Promise.all([
                 // Get user profile which contains messagesTotal (All Mail count)
                 gmail.users.getProfile({
                     userId: 'me'
-                }).catch(() => null),
-                // Get emails received today - using after: timestamp for accurate count
-                // The timestamp is in seconds since epoch for the start of today
+                }).catch((err) => {
+                    console.error('[Analytics] Failed to fetch Gmail profile:', err.message);
+                    return null;
+                }),
+                // Get emails received today using Gmail's date format
                 gmail.users.messages.list({
                     userId: 'me',
-                    q: `after:${Math.floor(todayStart.getTime() / 1000)}`,
-                    maxResults: 500  // Get actual list to count accurately
-                }).catch(() => null)
+                    q: `after:${todayDateStr}`,
+                    maxResults: 1  // We only need the resultSizeEstimate, not actual messages
+                }).catch((err) => {
+                    console.error('[Analytics] Failed to fetch today\'s emails:', err.message);
+                    return null;
+                })
             ]);
 
             if (profileRes && todayRes) {
+                // Log the raw data for debugging
+                console.log(`[Analytics] Raw Gmail API data for user ${userId}:`);
+                console.log(`  - Query used: after:${todayDateStr}`);
+                console.log(`  - Profile messagesTotal: ${profileRes.data.messagesTotal}`);
+                console.log(`  - Today's resultSizeEstimate: ${todayRes.data.resultSizeEstimate}`);
+                console.log(`  - Server time: ${new Date().toISOString()}`);
+                console.log(`  - Today start (server TZ): ${todayStart.toISOString()}`);
+
                 liveStats = {
-                    // Count actual messages returned for today
-                    today: todayRes.data.messages?.length || 0,
+                    // Use resultSizeEstimate which is accurate and handles pagination
+                    today: todayRes.data.resultSizeEstimate || 0,
                     // messagesTotal from profile is the exact count of all emails (All Mail)
                     total: profileRes.data.messagesTotal || 0,
                     usingLive: true
                 };
+                console.log(`[Analytics] Successfully fetched live stats for user ${userId}: ${liveStats.total} total, ${liveStats.today} today`);
+            } else {
+                console.warn(`[Analytics] Partial Gmail API response for user ${userId}, falling back to DB stats`);
             }
         }
-    } catch (e) {
-        console.warn('Failed to fetch live Gmail stats for dashboard:', e);
+    } catch (e: any) {
+        console.warn(`[Analytics] Failed to fetch live Gmail stats for user ${userId}:`, e.message);
         // Fallback to DB stats seamlessly
     }
 
@@ -246,10 +279,17 @@ export async function getDashboardStats(userId: number): Promise<DashboardStats>
         timeSavedMinutes += count * estimate;
     }
 
-    // Determine final stats values (Prefer live -> DB fallback)
-    const emailsToday = liveStats.usingLive ? liveStats.today : 0;
-    // For total emails, if we have live stats, use that. Otherwise use sync history sum.
-    const totalEmails = liveStats.usingLive ? liveStats.total : (syncStats._sum.emailCount || 0);
+    // Determine final stats values with intelligent fallback
+    // Prefer live Gmail data, but fall back to DB stats if API fails
+    const emailsToday = liveStats.usingLive
+        ? liveStats.today
+        : (todayDigest._sum.emailCount || 0);
+
+    const totalEmails = liveStats.usingLive
+        ? liveStats.total
+        : (syncStats._sum.emailCount || 0);
+
+    console.log(`[Analytics] Final stats for user ${userId}: emailsToday=${emailsToday}, totalEmails=${totalEmails}, source=${liveStats.usingLive ? 'Gmail API' : 'Database'}`);
 
     return {
         emailsToday,
