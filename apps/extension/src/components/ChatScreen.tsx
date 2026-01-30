@@ -543,7 +543,7 @@ function ChatScreen({ isLoggedIn, onLoginClick, activeConversationId, onConversa
                 }}
                 className="w-full bg-transparent border-none p-0 text-[13px] sm:text-[14px] text-white font-normal leading-relaxed tracking-normal pointer-events-none"
               >
-                <span className="text-white">{prompt}</span>
+                <span className="text-white">{prompt + '\u200b'}</span>
                 {suggestion && (
                   <span className="text-gray-500 opacity-60">{suggestion}</span>
                 )}
@@ -571,7 +571,7 @@ function ChatScreen({ isLoggedIn, onLoginClick, activeConversationId, onConversa
                   caretColor: '#31B8C6',
                   textShadow: '0 0 0 transparent',
                 }}
-                className="z-10 w-full bg-transparent border-none p-0 text-[13px] sm:text-[14px] placeholder-gray-500 focus:outline-none focus:ring-0 resize-none font-normal leading-relaxed tracking-normal scrollbar-thin scrollbar-thumb-[#22d3ee]/40 scrollbar-track-transparent min-h-[40px]"
+                className="z-10 w-full bg-transparent border-none p-0 text-[13px] sm:text-[14px] placeholder-gray-500 focus:outline-none focus:ring-0 resize-none font-normal leading-relaxed tracking-normal scrollbar-thin scrollbar-thumb-[#22d3ee]/40 scrollbar-track-transparent min-h-[24px]"
               />
             </div>
 
@@ -679,14 +679,7 @@ function ChatScreen({ isLoggedIn, onLoginClick, activeConversationId, onConversa
           )}
 
 
-          {!isLoggedIn && (
-            <button
-              onClick={onLoginClick}
-              className="text-xs sm:text-sm lg:text-base xl:text-lg font-semibold bg-transparent text-gray-300 border border-[#262626] hover:border-[#22d3ee] rounded-md px-3 sm:px-3.5 lg:px-4 xl:px-5 py-2 sm:py-2.5 lg:py-3 hover:text-white transition-colors"
-            >
-              Log In ↗
-            </button>
-          )}
+
         </div>
       </footer>
     </div>

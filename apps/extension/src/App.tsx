@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import ChatScreen from './components/ChatScreen';
 import TasksScreen from './components/TasksScreen';
@@ -7,6 +8,7 @@ import SettingScreen from './components/SettingScreen';
 import LoginScreen from './components/LoginScreen';
 import ProfileScreen from './components/ProfileScreen';
 import SupportScreen from './components/SupportScreen';
+import OnboardingScreen from './components/OnboardingScreen'; // Import added
 import { useAuth } from './hooks/useAuth';
 
 import HistoryScreen from './components/HistoryScreen';
@@ -32,18 +34,24 @@ function App() {
   const { token, isLoading, login, logout } = useAuth();
 
   useEffect(() => {
-    const protectedScreens: Screen[] = ['Profile', 'Settings'];
-    if (!token && protectedScreens.includes(currentScreen)) {
-      setCurrentScreen('Login');
+    // If we have a token, we ensure we're not stuck on the Login screen state if it was set
+    if (token && currentScreen === 'Login') {
+      setCurrentScreen('Chat');
     }
   }, [currentScreen, token]);
 
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-[#14161F]">
-        <p>Loading...</p>
+        {/* Loading Spinner or similar */}
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#22d3ee]"></div>
       </div>
     );
+  }
+
+  // --- NEW: If not logged in, show ONLY the OnboardingScreen ---
+  if (!token) {
+    return <OnboardingScreen login={login} />;
   }
 
   return (
@@ -96,7 +104,8 @@ function App() {
           />
         </div>
 
-        {/* Login is also mounted always — we hide it until needed */}
+        {/* Note: We might not need LoginScreen here anymore since we have OnboardingScreen,
+             but keeping it for now in case of re-auth flow logic or reference. */ }
         <div
           style={{
             display: currentScreen === 'Login' ? 'block' : 'none',
