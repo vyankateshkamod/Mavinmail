@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Clock, Plus, Trash2, CheckCircle, AlertCircle } from "lucide-react";
-import api from "../services/api"; // Assuming api service exists
+import { X, Clock, Plus, Trash2, CheckCircle, FileText, ChevronRight, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
+import api, { deleteActivity } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 
 interface Task {
@@ -12,17 +12,28 @@ interface Task {
   status: string;
 }
 
+interface Activity {
+  id: number;
+  action: string;
+  description: string;
+  timestamp: string;
+  success: boolean;
+  metadata?: any;
+}
+
 function TasksScreen() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [newTask, setNewTask] = useState({
     type: "morning-briefing",
     frequency: "daily",
     time: "08:00",
   });
-  const [activities, setActivities] = useState<any[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
+  const [selectedBriefing, setSelectedBriefing] = useState<Activity | null>(null);
 
   const { token } = useAuth();
 
@@ -40,6 +51,7 @@ function TasksScreen() {
       setTasks(res.data);
     } catch (err) {
       console.error("Failed to fetch tasks", err);
+      setError("Failed to load tasks");
     } finally {
       setIsLoading(false);
     }
@@ -47,7 +59,8 @@ function TasksScreen() {
 
   const fetchActivities = async () => {
     try {
-      const res = await api.get("/dashboard/activity?limit=10");
+      // Fetch more history to populate the list (limit 50)
+      const res = await api.get("/dashboard/activity?limit=50");
       setActivities(res.data.activity || []);
     } catch (err) {
       console.error("Failed to fetch activities", err);
@@ -65,6 +78,7 @@ function TasksScreen() {
   };
 
   const handleDeleteTask = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this schedule?")) return;
     setTasks(prev => prev.filter(t => t.id !== id));
     try {
       await api.delete(`/tasks/${id}`);
@@ -74,8 +88,22 @@ function TasksScreen() {
     }
   };
 
-  const getLatestResultForTask = (type: string) => {
-    return activities.find(a => a.action === (type === 'morning-briefing' ? 'digest' : type));
+  const handleDeleteActivity = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    if (!confirm("Delete this briefing report?")) return;
+
+    setActivities(prev => prev.filter(a => a.id !== id));
+    try {
+      await deleteActivity(id);
+    } catch (err) {
+      console.error("Failed to delete activity", err);
+      fetchActivities(); // Revert on failure
+    }
+  };
+
+  const getActivitiesForTask = (taskType: string) => {
+    const actionType = taskType === 'morning-briefing' ? 'digest' : taskType;
+    return activities.filter(a => a.action === actionType);
   };
 
   return (
@@ -85,7 +113,7 @@ function TasksScreen() {
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-[#22d3ee]">Tasks & Schedules</h1>
           <p className="text-sm text-gray-400 mt-1">
-            Manage your automated email briefings and reminders.
+            Manage your automated email briefings.
           </p>
         </div>
 
@@ -104,6 +132,22 @@ function TasksScreen() {
           <div className="w-8 h-8 border-2 border-[#22d3ee] border-t-transparent rounded-full animate-spin"></div>
           <div className="text-gray-500 font-medium">Fetching your schedules...</div>
         </div>
+      ) : error ? (
+        <div className="flex flex-col items-center justify-center mt-20 gap-4 text-center px-6">
+          <div className="w-12 h-12 bg-red-500/10 rounded-2xl flex items-center justify-center text-red-500 mb-2">
+            <AlertCircle className="w-6 h-6" />
+          </div>
+          <h3 className="text-red-400 font-medium">Connection Failed</h3>
+          <p className="text-gray-500 text-sm mb-4">
+            Could not retrieve your tasks. The backend server might be offline or unreachable.
+          </p>
+          <button
+            onClick={() => { setError(null); fetchTasks(); fetchActivities(); }}
+            className="px-4 py-2 bg-[#22d3ee]/10 text-[#22d3ee] rounded-lg hover:bg-[#22d3ee]/20 transition-colors text-sm font-medium"
+          >
+            Try Again
+          </button>
+        </div>
       ) : tasks.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center border border-[#262626] rounded-2xl p-10 bg-[#171717]/50 backdrop-blur-sm shadow-xl">
           <div className="text-center max-w-xs">
@@ -114,7 +158,7 @@ function TasksScreen() {
               No active tasks
             </h2>
             <p className="text-gray-500 text-sm mb-8 leading-relaxed">
-              Schedule your Morning Briefing or Follow-up Reminders to save hours every week.
+              Schedule your Morning Briefing to save hours every week.
             </p>
             <button
               onClick={() => setShowModal(true)}
@@ -127,7 +171,7 @@ function TasksScreen() {
       ) : (
         <div className="grid grid-cols-1 gap-6 pb-20">
           {tasks.map((task) => {
-            const latestResult = getLatestResultForTask(task.type);
+            const taskActivities = getActivitiesForTask(task.type);
             const isExpanded = expandedTaskId === task.id;
 
             return (
@@ -157,57 +201,130 @@ function TasksScreen() {
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => handleDeleteTask(task.id)}
-                    className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all"
-                    title="Delete task"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
+                      className="p-2 text-gray-400 hover:text-white hover:bg-[#262626] rounded-xl transition-all"
+                      title={isExpanded ? "Collapse History" : "Show History"}
+                    >
+                      {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                    <button
+                      onClick={() => handleDeleteTask(task.id)}
+                      className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all"
+                      title="Delete task"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
 
-                {/* Latest Result Snippet */}
-                {latestResult && (
-                  <div className="mt-5 pt-5 border-t border-[#262626]">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4 text-green-400" />
-                        <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Latest Briefing Ready</span>
-                      </div>
-                      <button
-                        onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
-                        className="text-[11px] font-bold text-[#22d3ee] hover:underline uppercase tracking-widest"
-                      >
-                        {isExpanded ? 'Hide Result' : 'View Result'}
-                      </button>
-                    </div>
+                {/* History Section */}
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-6 pt-4 border-t border-[#262626]">
+                        <h4 className="text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wider">Briefing History</h4>
 
-                    <AnimatePresence mode="wait">
-                      {isExpanded && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="bg-[#121212] rounded-2xl p-4 border border-[#262626] text-xs text-gray-300 leading-relaxed whitespace-pre-wrap font-sans max-h-60 overflow-y-auto mt-2 custom-scrollbar">
-                            {latestResult.metadata?.summary || latestResult.description}
+                        {taskActivities.length === 0 ? (
+                          <p className="text-sm text-gray-500 italic">No briefings generated yet.</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {taskActivities.map((activity) => (
+                              <div
+                                key={activity.id}
+                                onClick={() => setSelectedBriefing(activity)}
+                                className="flex items-center justify-between p-3 rounded-xl bg-[#1e1e1e] border border-[#262626] hover:bg-[#262626] hover:border-[#22d3ee]/30 cursor-pointer group/item transition-all"
+                              >
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                  <div className="w-8 h-8 rounded-full bg-[#262626] flex items-center justify-center flex-shrink-0 text-[#22d3ee]">
+                                    <FileText className="w-4 h-4" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-medium text-gray-200 truncate pr-2">
+                                      {new Date(activity.timestamp).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                                    </p>
+                                    <p className="text-[10px] text-gray-500 truncate">
+                                      {activity.metadata?.emailCount ? `${activity.metadata.emailCount} emails processed` : activity.description}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={(e) => handleDeleteActivity(e, activity.id)}
+                                    className="p-1.5 text-gray-600 hover:text-red-400 opacity-0 group-hover/item:opacity-100 transition-opacity"
+                                    title="Delete this record"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <ChevronRight className="w-4 h-4 text-gray-600" />
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                    {!isExpanded && (
-                      <p className="text-[11px] text-gray-500 italic mt-1 line-clamp-1">
-                        {new Date(latestResult.timestamp).toLocaleDateString()} • {latestResult.description}
-                      </p>
-                    )}
-                  </div>
-                )}
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             );
           })}
         </div>
       )}
+
+      {/* Detail Modal */}
+      <AnimatePresence>
+        {selectedBriefing && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+            onClick={() => setSelectedBriefing(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-[#121212] w-full max-w-2xl max-h-[85vh] rounded-2xl border border-[#333] shadow-2xl overflow-hidden flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between p-4 border-b border-[#262626] bg-[#171717]">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-[#22d3ee]/10 rounded-lg">
+                    <FileText className="w-5 h-5 text-[#22d3ee]" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">Daily Briefing</h3>
+                    <p className="text-xs text-gray-400">
+                      {new Date(selectedBriefing.timestamp).toLocaleString(undefined, { dateStyle: 'full', timeStyle: 'short' })}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedBriefing(null)}
+                  className="p-2 hover:bg-[#262626] rounded-full text-gray-400 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-gray-700">
+                <div className="prose prose-invert prose-sm max-w-none font-sans leading-relaxed whitespace-pre-wrap text-gray-300">
+                  {(selectedBriefing.metadata?.summary || selectedBriefing.description || '').replace(/\*\*/g, '').replace(/__/, '')}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Create Task Modal */}
       <AnimatePresence>

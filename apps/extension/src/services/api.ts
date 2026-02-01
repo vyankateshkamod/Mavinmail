@@ -149,6 +149,11 @@ export const getRecentActivity = async (limit: number = 10) => {
   return response.data.activity;
 };
 
+export const deleteActivity = async (id: number): Promise<{ success: boolean }> => {
+  const response = await api.delete(`/dashboard/activity/${id}`);
+  return response.data;
+};
+
 // User Profile
 export const getUserProfile = async (): Promise<{ firstName: string; lastName: string; email: string }> => {
   try {
@@ -235,5 +240,30 @@ export const getAvailableModels = async (): Promise<AIModel[]> => {
   } catch (error: any) {
     console.error('Failed to fetch available models:', error);
     return [];
+  }
+};
+
+// ====================================================================
+// System Status
+// ====================================================================
+
+export const getPublicSystemStatus = async (): Promise<{
+  maintenanceMode: boolean;
+  maintenanceMessage: string;
+  announcement: string;
+  announcementActive: boolean;
+}> => {
+  try {
+    // This endpoint should be public (no auth required)
+    const response = await api.get('/system/status');
+    return response.data;
+  } catch (error: any) {
+    // Fail silently/gracefully by returning "everything is fine"
+    return {
+      maintenanceMode: false,
+      maintenanceMessage: '',
+      announcement: '',
+      announcementActive: false,
+    };
   }
 };

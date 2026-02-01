@@ -2,9 +2,13 @@ import { useState } from 'react';
 
 interface OnboardingScreenProps {
     login: (credentials: { email: string; password: string }) => Promise<void>;
+    isMaintenanceMode?: boolean;
+    maintenanceMessage?: string;
 }
 
-export default function OnboardingScreen({ login }: OnboardingScreenProps) {
+import { AlertCircle } from 'lucide-react'; // Ensure icon is imported
+
+export default function OnboardingScreen({ login, isMaintenanceMode = false, maintenanceMessage }: OnboardingScreenProps) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -12,7 +16,7 @@ export default function OnboardingScreen({ login }: OnboardingScreenProps) {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (loading) return;
+        if (loading || isMaintenanceMode) return; // Prevent submit in maintenance
 
         setError('');
         setLoading(true);
@@ -52,16 +56,29 @@ export default function OnboardingScreen({ login }: OnboardingScreenProps) {
                 {/* Login Form */}
                 <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
 
+                    {isMaintenanceMode && (
+                        <div className="w-full mb-2 bg-[#ef4444]/10 border border-[#ef4444]/20 rounded-xl p-3 flex items-start gap-3 animate-in slide-in-from-bottom-2 duration-300">
+                            <AlertCircle className="w-5 h-5 text-[#ef4444] shrink-0 mt-0.5" />
+                            <div className="flex-1">
+                                <h3 className="text-[#ef4444] font-medium text-sm mb-0.5">System Maintenance</h3>
+                                <p className="text-gray-400 text-xs leading-relaxed">
+                                    {maintenanceMessage || "We're currently performing scheduled maintenance. Check back soon."}
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="space-y-4">
                         <div className="relative group">
                             <input
                                 id="email"
                                 type="email"
                                 placeholder="Email address"
-                                className="w-full px-4 py-3 bg-[#121212] border border-[#262626] rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#22d3ee] focus:ring-1 focus:ring-[#22d3ee] transition-all group-hover:border-[#333]"
+                                className={`w-full px-4 py-3 bg-[#121212] border border-[#262626] rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#22d3ee] focus:ring-1 focus:ring-[#22d3ee] transition-all group-hover:border-[#333] ${isMaintenanceMode ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
+                                disabled={isMaintenanceMode}
                                 autoComplete="email"
                             />
                         </div>
@@ -71,10 +88,11 @@ export default function OnboardingScreen({ login }: OnboardingScreenProps) {
                                 id="password"
                                 type="password"
                                 placeholder="Password"
-                                className="w-full px-4 py-3 bg-[#121212] border border-[#262626] rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#22d3ee] focus:ring-1 focus:ring-[#22d3ee] transition-all group-hover:border-[#333]"
+                                className={`w-full px-4 py-3 bg-[#121212] border border-[#262626] rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#22d3ee] focus:ring-1 focus:ring-[#22d3ee] transition-all group-hover:border-[#333] ${isMaintenanceMode ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
+                                disabled={isMaintenanceMode}
                                 autoComplete="current-password"
                             />
                         </div>
@@ -88,15 +106,15 @@ export default function OnboardingScreen({ login }: OnboardingScreenProps) {
 
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={loading || isMaintenanceMode}
                         className={`w-full mt-2 py-3 px-4 rounded-xl font-semibold text-sm transition-all transform active:scale-[0.98]
-              ${loading
+              ${(loading || isMaintenanceMode)
                                 ? 'bg-[#1a1a1a] text-gray-500 cursor-not-allowed border border-[#333]'
                                 : 'bg-[#22d3ee] text-black hover:bg-[#1bbccf] hover:shadow-[0_0_20px_-5px_#22d3ee]'
                             }
             `}
                     >
-                        {loading ? 'Signing in...' : 'Sign In'}
+                        {loading ? 'Signing in...' : isMaintenanceMode ? 'System Maintenance' : 'Sign In'}
                     </button>
                 </form>
 

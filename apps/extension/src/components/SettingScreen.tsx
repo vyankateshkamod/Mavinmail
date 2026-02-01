@@ -21,7 +21,7 @@ function SettingScreen() {
         // 2. Check local storage for user's selection
         const result = await chrome.storage.local.get(['selectedModel']);
         if (result.selectedModel) {
-          setSelectedModel(result.selectedModel);
+          setSelectedModel(result.selectedModel as string);
         } else {
           // 3. Use default model from the list or first available
           const defaultModel = availableModels.find(m => m.isDefault);
@@ -33,7 +33,7 @@ function SettingScreen() {
         await syncModelPreference();
         const updated = await chrome.storage.local.get(['selectedModel']);
         if (updated.selectedModel) {
-          setSelectedModel(updated.selectedModel);
+          setSelectedModel(updated.selectedModel as string);
         }
       } catch (error) {
         console.error('Failed to load models:', error);
