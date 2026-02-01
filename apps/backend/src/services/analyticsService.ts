@@ -217,8 +217,9 @@ export async function getDashboardStats(userId: number): Promise<DashboardStats>
 
             const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-            // Format today's date as YYYY/MM/DD for Gmail's 'after:' operator
-            const todayDateStr = `${todayStart.getFullYear()}/${String(todayStart.getMonth() + 1).padStart(2, '0')}/${String(todayStart.getDate()).padStart(2, '0')}`;
+            // Use Unix timestamp for robust timezone handling (local midnight)
+            // 'after:YYYY/MM/DD' can be ambiguous or UTC-based, missing early morning emails
+            const midnightTimestamp = Math.floor(todayStart.getTime() / 1000);
 
             // Fetch stats in parallel for performance
             const [profileRes, todayRes] = await Promise.all([
@@ -229,11 +230,12 @@ export async function getDashboardStats(userId: number): Promise<DashboardStats>
                     console.error('[Analytics] Failed to fetch Gmail profile:', err.message);
                     return null;
                 }),
-                // Get emails received today using Gmail's date format
+                // Get all emails from today (Sent + Received) using timestamp
                 gmail.users.messages.list({
                     userId: 'me',
-                    q: `after:${todayDateStr}`,
-                    maxResults: 1  // We only need the resultSizeEstimate, not actual messages
+                    q: `after:${midnightTimestamp}`,
+                    maxResults: 500,
+                    includeSpamTrash: false
                 }).catch((err) => {
                     console.error('[Analytics] Failed to fetch today\'s emails:', err.message);
                     return null;
@@ -243,15 +245,14 @@ export async function getDashboardStats(userId: number): Promise<DashboardStats>
             if (profileRes && todayRes) {
                 // Log the raw data for debugging
                 console.log(`[Analytics] Raw Gmail API data for user ${userId}:`);
-                console.log(`  - Query used: after:${todayDateStr}`);
+                console.log(`  - Query used: after:${midnightTimestamp} (${new Date(midnightTimestamp * 1000).toLocaleString()})`);
                 console.log(`  - Profile messagesTotal: ${profileRes.data.messagesTotal}`);
                 console.log(`  - Today's resultSizeEstimate: ${todayRes.data.resultSizeEstimate}`);
-                console.log(`  - Server time: ${new Date().toISOString()}`);
-                console.log(`  - Today start (server TZ): ${todayStart.toISOString()}`);
+                console.log(`  - Actual IDs returned: ${todayRes.data.messages?.length || 0}`);
 
                 liveStats = {
-                    // Use resultSizeEstimate which is accurate and handles pagination
-                    today: todayRes.data.resultSizeEstimate || 0,
+                    // Use actual length if available and less than resultSizeEstimate, otherwise rely on estimate
+                    today: todayRes.data.messages?.length || todayRes.data.resultSizeEstimate || 0,
                     // messagesTotal from profile is the exact count of all emails (All Mail)
                     total: profileRes.data.messagesTotal || 0,
                     usingLive: true
@@ -272,12 +273,38 @@ export async function getDashboardStats(userId: number): Promise<DashboardStats>
         usageMap[item.action] = item._count.action;
     }
 
-    // Calculate time saved
+    // --- DYNAMIC TIME SAVED CALCULATION ---
+
+    // 1. Fetch digest logs to look at actual email counts
+    const digestLogs = await prisma.usageLog.findMany({
+        where: { userId, action: 'digest', success: true },
+        select: { metadata: true }
+    });
+
+    let digestEmailCount = 0;
+    digestLogs.forEach(log => {
+        const meta = log.metadata as any;
+        if (meta && typeof meta.emailCount === 'number') {
+            digestEmailCount += meta.emailCount;
+        }
+    });
+
+    // 2. Calculate base time saved from usage map (excluding digest)
     let timeSavedMinutes = 0;
     for (const [action, count] of Object.entries(usageMap)) {
+        if (action === 'digest') continue; // Handle digest separately
         const estimate = TIME_ESTIMATES[action as ActionType] || 0;
         timeSavedMinutes += count * estimate;
     }
+
+    // 3. Add dynamic digest savings (2 minutes per email summarized)
+    // If no metadata, fall back to fixed 10 mins per digest
+    const digestCount = usageMap['digest'] || 0;
+    const dynamicDigestSavings = digestEmailCount > 0
+        ? (digestEmailCount * 2)
+        : (digestCount * 10);
+
+    timeSavedMinutes += dynamicDigestSavings;
 
     // Determine final stats values with intelligent fallback
     // Prefer live Gmail data, but fall back to DB stats if API fails
@@ -391,11 +418,11 @@ export async function getUsageTrends(
     // Group by date
     const trendMap: Record<string, UsageTrend> = {};
 
-    // Initialize all days
+    // Initialize all days (using Local Date to match user's perspective)
     for (let i = 0; i < days; i++) {
         const date = new Date();
         date.setDate(date.getDate() - (days - 1 - i));
-        const dateStr = date.toISOString().split('T')[0];
+        const dateStr = date.toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
         trendMap[dateStr] = {
             date: dateStr,
             total: 0,
@@ -411,7 +438,8 @@ export async function getUsageTrends(
 
     // Populate with actual data
     for (const log of logs) {
-        const dateStr = log.createdAt.toISOString().split('T')[0];
+        // Use local date string to align with "today" concept on client
+        const dateStr = log.createdAt.toLocaleDateString('en-CA');
         if (trendMap[dateStr]) {
             trendMap[dateStr].total++;
 
@@ -459,6 +487,20 @@ export async function getAccountEmailStats(userId: number) {
     };
 }
 
+/**
+ * Delete a specific activity log
+ */
+export async function deleteActivity(userId: number, activityId: number): Promise<boolean> {
+    const result = await prisma.usageLog.deleteMany({
+        where: {
+            id: activityId,
+            userId: userId
+        }
+    });
+
+    return result.count > 0;
+}
+
 export default {
     logUsage,
     logSyncHistory,
@@ -466,4 +508,5 @@ export default {
     getRecentActivity,
     getUsageTrends,
     getAccountEmailStats,
+    deleteActivity,
 };

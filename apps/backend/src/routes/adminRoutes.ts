@@ -10,6 +10,8 @@ import {
     activateUser,
     getPlatformStats,
     getAuditLogs,
+    getSystemSettings,
+    updateSystemSettings,
 } from '../controllers/adminController.js';
 import {
     getAllTickets,
@@ -84,7 +86,17 @@ router.delete('/support-tickets/:id', requireAdmin, deleteAdminTicket);
 // ============================================================================
 
 // GET /api/admin/audit-logs - View audit history
-router.get('/audit-logs', requireSuperAdmin, getAuditLogs);
+router.get('/audit-logs', requireAdmin, getAuditLogs);
+
+// ============================================================================
+// SYSTEM SETTINGS ROUTES - Requires ADMIN or SUPER_ADMIN
+// ============================================================================
+
+// GET /api/admin/settings - Get all system settings
+router.get('/settings', requireAdmin, getSystemSettings);
+
+// PUT /api/admin/settings - Update system settings
+router.put('/settings', requireAdmin, updateSystemSettings);
 
 export default router;
 

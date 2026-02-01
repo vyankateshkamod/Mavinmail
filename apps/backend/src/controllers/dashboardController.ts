@@ -13,7 +13,8 @@ import {
     getDashboardStats,
     getRecentActivity,
     getUsageTrends,
-    getAccountEmailStats
+    getAccountEmailStats,
+    deleteActivity
 } from '../services/analyticsService.js';
 
 // ============================================================================
@@ -150,9 +151,44 @@ export const getAccountStats = async (req: Request, res: Response) => {
     }
 };
 
+/**
+ * DELETE /api/dashboard/activity/:id
+ * Deletes a specific activity log
+ */
+export const deleteActivityLog = async (req: Request, res: Response) => {
+    const authenticatedReq = req as AuthenticatedRequest;
+
+    if (!authenticatedReq.user?.userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const userId = authenticatedReq.user.userId;
+    const activityId = parseInt(req.params.id);
+
+    if (isNaN(activityId)) {
+        return res.status(400).json({ error: 'Invalid activity ID' });
+    }
+
+    try {
+        const success = await deleteActivity(userId, activityId);
+        if (success) {
+            res.json({ success: true, message: 'Activity deleted successfully' });
+        } else {
+            res.status(404).json({ error: 'Activity not found or not owned by user' });
+        }
+    } catch (error: any) {
+        console.error('[DashboardController] Error deleting activity:', error);
+        res.status(500).json({
+            error: 'Failed to delete activity',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
 export default {
     getStats,
     getActivity,
     getTrends,
     getAccountStats,
+    deleteActivityLog,
 };

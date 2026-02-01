@@ -311,3 +311,68 @@ export const getAuditLogs = async (req: Request, res: Response) => {
         res.status(500).json({ error: error.message || 'Failed to get audit logs' });
     }
 };
+
+// ============================================================================
+// SYSTEM SETTINGS ENDPOINTS
+// ============================================================================
+
+/**
+ * GET /api/admin/settings
+ * Get all system settings
+ */
+export const getSystemSettings = async (req: Request, res: Response) => {
+    try {
+        const settings = await adminService.getAllSystemSettings();
+        res.json(settings);
+    } catch (error: any) {
+        console.error('Get system settings error:', error);
+        res.status(500).json({ error: error.message || 'Failed to get system settings' });
+    }
+};
+
+/**
+ * PUT /api/admin/settings
+ * Update system settings
+ */
+export const updateSystemSettings = async (req: Request, res: Response) => {
+    const authenticatedReq = req as AuthenticatedRequest;
+    try {
+        const actorId = authenticatedReq.user!.userId;
+        const ipAddress = req.ip || req.headers['x-forwarded-for'] as string;
+
+        const settings = req.body;
+
+        if (!settings || typeof settings !== 'object') {
+            return res.status(400).json({ error: 'Invalid settings object' });
+        }
+
+        const updatedSettings = await adminService.updateSystemSettings(
+            settings,
+            actorId,
+            ipAddress
+        );
+
+        res.json({
+            message: 'Settings updated successfully',
+            settings: updatedSettings
+        });
+    } catch (error: any) {
+        console.error('Update system settings error:', error);
+        res.status(500).json({ error: error.message || 'Failed to update system settings' });
+    }
+};
+
+/**
+ * GET /api/system/status (PUBLIC - no auth required)
+ * Get public system status for maintenance mode and announcements
+ */
+export const getPublicSystemStatus = async (req: Request, res: Response) => {
+    try {
+        const status = await adminService.getPublicSystemStatus();
+        res.json(status);
+    } catch (error: any) {
+        console.error('Get system status error:', error);
+        res.status(500).json({ error: error.message || 'Failed to get system status' });
+    }
+};
+

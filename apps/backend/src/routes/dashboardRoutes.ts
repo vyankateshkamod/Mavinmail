@@ -10,7 +10,8 @@ import {
     getStats,
     getActivity,
     getTrends,
-    getAccountStats
+    getAccountStats,
+    deleteActivityLog
 } from '../controllers/dashboardController.js';
 
 const router = Router();
@@ -45,5 +46,11 @@ router.get('/trends', getTrends);
  * Get email statistics for connected accounts
  */
 router.get('/account-stats', getAccountStats);
+
+/**
+ * DELETE /api/dashboard/activity/:id
+ * Delete a specific activity log
+ */
+router.delete('/activity/:id', deleteActivityLog);
 
 export default router;

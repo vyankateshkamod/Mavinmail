@@ -146,6 +146,12 @@ Answer the following question to the best of your ability.
 Question: ${question}
 `;
       const answer = await OpenRouterService.generateContent(prompt, model);
+
+      // Log usage for analytics (General Chat)
+      if (userId) {
+        logUsage({ userId: Number(userId), action: 'rag_query', metadata: { query: question, model, useRag: false } });
+      }
+
       return res.json({ answer });
     }
 
@@ -195,6 +201,11 @@ ${e.content}
     // 4️⃣ Generate grounded answer
     const answer = await generateAnswerFromContext(question, truncatedContext, model);
 
+    // Log usage for analytics
+    if (userId) {
+      logUsage({ userId: Number(userId), action: 'rag_query', metadata: { query: question, model, useRag: true } });
+    }
+
     res.json({ answer });
 
   } catch (error) {
@@ -228,6 +239,12 @@ export const enhanceText = async (req: Request, res: Response) => {
     const prompt = `${instruction}\n\nText:\n---\n${text}\n---\n\nReturn only the enhanced text, nothing else.`;
 
     const enhancedText = await OpenRouterService.generateContent(prompt, model);
+
+    // Log usage for analytics
+    if (userId) {
+      logUsage({ userId: Number(userId), action: 'enhance', metadata: { type, model } });
+    }
+
     res.status(200).json({ enhancedText });
   } catch (error) {
     console.error('Error enhancing text:', error);
@@ -264,6 +281,12 @@ Draft a professional and polite reply to the above email.
 `;
 
     const reply = await OpenRouterService.generateContent(prompt, model);
+
+    // Log usage for analytics
+    if (userId) {
+      logUsage({ userId: Number(userId), action: 'draft', metadata: { model } });
+    }
+
     res.status(200).json({ reply });
   } catch (error) {
     console.error('Error in draftReply:', error);

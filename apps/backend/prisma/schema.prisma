@@ -194,3 +194,17 @@ model SupportTicket {
   @@index([priority])
   @@index([createdAt])
 }
+
+// ============================================================================
+// SYSTEM CONFIGURATION - Global settings managed by admins
+// ============================================================================
+
+model SystemConfig {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique  // "maintenance_mode", "feature_smart_summary", etc.
+  value     String   @db.Text // JSON-encoded value for flexibility
+  updatedAt DateTime @updatedAt
+  updatedBy Int?     // Admin who last modified
+  
+  @@index([key])
+}

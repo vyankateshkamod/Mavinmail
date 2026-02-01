@@ -92,4 +92,8 @@ app.use('/api/support', supportRoutes);
 import modelRoutes from './routes/modelRoutes.js';
 app.use('/api/models', modelRoutes);
 
+// System routes (Public)
+import systemRoutes from './routes/systemRoutes.js';
+app.use('/api/system', systemRoutes);
+
 export default app;

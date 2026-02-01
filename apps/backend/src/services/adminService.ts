@@ -317,16 +317,31 @@ export const getPlatformStats = async () => {
         usersByRole,
         apiCallsToday,
         apiCallsMonth,
+        totalApiCalls,
         syncHistoryToday,
     ] = await Promise.all([
-        // Total users
-        prisma.user.count(),
+        // Total users (excluding admins)
+        prisma.user.count({
+            where: {
+                role: { notIn: ['ADMIN', 'SUPER_ADMIN'] }
+            }
+        }),
 
-        // Active users (not suspended)
-        prisma.user.count({ where: { isActive: true } }),
+        // Active users (not suspended, excluding admins)
+        prisma.user.count({
+            where: {
+                isActive: true,
+                role: { notIn: ['ADMIN', 'SUPER_ADMIN'] }
+            }
+        }),
 
-        // Suspended users
-        prisma.user.count({ where: { isActive: false } }),
+        // Suspended users (excluding admins)
+        prisma.user.count({
+            where: {
+                isActive: false,
+                role: { notIn: ['ADMIN', 'SUPER_ADMIN'] }
+            }
+        }),
 
         // New users today
         prisma.user.count({
@@ -348,6 +363,9 @@ export const getPlatformStats = async () => {
         prisma.usageLog.count({
             where: { createdAt: { gte: startOfMonth } },
         }),
+
+        // Total API calls (All time)
+        prisma.usageLog.count(),
 
         // Total emails synced today
         prisma.syncHistory.aggregate({
@@ -373,6 +391,7 @@ export const getPlatformStats = async () => {
         activity: {
             apiCallsToday,
             apiCallsMonth,
+            totalApiCalls,
             emailsSyncedToday: syncHistoryToday._sum.emailCount || 0,
         },
     };
@@ -453,3 +472,135 @@ export const getAuditLogs = async (options: {
         },
     };
 };
+
+// ============================================================================
+// SYSTEM CONFIGURATION
+// ============================================================================
+
+// Default system config values
+const DEFAULT_SYSTEM_CONFIG: Record<string, any> = {
+    maintenance_mode: false,
+    maintenance_message: '',
+    system_announcement: '',
+    system_announcement_active: false,
+};
+
+/**
+ * Get a single system config value
+ */
+export const getSystemConfig = async (key: string): Promise<any> => {
+    const config = await prisma.systemConfig.findUnique({
+        where: { key },
+    });
+
+    if (!config) {
+        return DEFAULT_SYSTEM_CONFIG[key] ?? null;
+    }
+
+    try {
+        return JSON.parse(config.value);
+    } catch {
+        return config.value;
+    }
+};
+
+/**
+ * Set a single system config value
+ */
+export const setSystemConfig = async (
+    key: string,
+    value: any,
+    actorId?: number
+): Promise<void> => {
+    const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
+
+    await prisma.systemConfig.upsert({
+        where: { key },
+        create: {
+            key,
+            value: stringValue,
+            updatedBy: actorId,
+        },
+        update: {
+            value: stringValue,
+            updatedBy: actorId,
+        },
+    });
+
+    // Log the action if actorId is provided
+    if (actorId) {
+        await logAdminAction({
+            actorId,
+            action: 'SYSTEM_CONFIG_CHANGED',
+            targetType: 'SYSTEM',
+            metadata: { key, value },
+        });
+    }
+};
+
+/**
+ * Get all system settings as a flat object
+ */
+export const getAllSystemSettings = async (): Promise<Record<string, any>> => {
+    const configs = await prisma.systemConfig.findMany();
+
+    const result: Record<string, any> = { ...DEFAULT_SYSTEM_CONFIG };
+
+    for (const config of configs) {
+        try {
+            result[config.key] = JSON.parse(config.value);
+        } catch {
+            result[config.key] = config.value;
+        }
+    }
+
+    return result;
+};
+
+/**
+ * Update multiple system settings at once
+ */
+export const updateSystemSettings = async (
+    settings: Record<string, any>,
+    actorId: number,
+    ipAddress?: string
+): Promise<Record<string, any>> => {
+    const updates = Object.entries(settings).map(([key, value]) =>
+        setSystemConfig(key, value, actorId)
+    );
+
+    await Promise.all(updates);
+
+    return getAllSystemSettings();
+};
+
+/**
+ * Get public system status (for unauthenticated requests)
+ * Returns only maintenance mode and announcement info
+ */
+export const getPublicSystemStatus = async (): Promise<{
+    maintenanceMode: boolean;
+    maintenanceMessage: string;
+    announcement: string;
+    announcementActive: boolean;
+}> => {
+    const [
+        maintenanceMode,
+        maintenanceMessage,
+        announcement,
+        announcementActive,
+    ] = await Promise.all([
+        getSystemConfig('maintenance_mode'),
+        getSystemConfig('maintenance_message'),
+        getSystemConfig('system_announcement'),
+        getSystemConfig('system_announcement_active'),
+    ]);
+
+    return {
+        maintenanceMode: maintenanceMode ?? false,
+        maintenanceMessage: maintenanceMessage ?? '',
+        announcement: announcement ?? '',
+        announcementActive: announcementActive ?? false,
+    };
+};
+
