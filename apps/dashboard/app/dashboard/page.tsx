@@ -18,6 +18,8 @@ import { useSession } from "next-auth/react"
 import { Shield } from "lucide-react"
 import { LayoutDashboard, Users, BarChart3, Settings, User, CreditCard, HelpCircle, Calendar } from "lucide-react"
 
+import { SystemMessage } from "@/components/SystemMessage"
+
 /** Internal component that uses useSearchParams */
 function DashboardPageContent() {
     const { data: session } = useSession()
@@ -102,6 +104,7 @@ function DashboardPageContent() {
             />
 
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+                <SystemMessage />
                 <TopNav
                     activeView={activeView}
                     onViewChange={handleViewChange}

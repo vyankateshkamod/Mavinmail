@@ -52,10 +52,22 @@ function StatCard({ title, value, icon, color }: StatCardProps) {
     )
 }
 
+// Module-scope cache
+let ticketCache: {
+    key: string;
+    data: {
+        tickets: SupportTicket[];
+        stats: TicketStats | null;
+    };
+} | null = null;
+
 export function SupportTicketsView() {
-    const [tickets, setTickets] = React.useState<SupportTicket[]>([])
-    const [stats, setStats] = React.useState<TicketStats | null>(null)
-    const [loading, setLoading] = React.useState(true)
+    // Initialize from cache if filters match default (empty)
+    const initialCacheUse = ticketCache && ticketCache.key === JSON.stringify({ status: "", priority: "", search: "" });
+
+    const [tickets, setTickets] = React.useState<SupportTicket[]>(initialCacheUse ? ticketCache!.data.tickets : []);
+    const [stats, setStats] = React.useState<TicketStats | null>(initialCacheUse ? ticketCache!.data.stats : null);
+    const [loading, setLoading] = React.useState(!initialCacheUse);
     const [selectedTicket, setSelectedTicket] = React.useState<SupportTicket | null>(null)
     const [searchQuery, setSearchQuery] = React.useState("")
     const [statusFilter, setStatusFilter] = React.useState<string>("")
@@ -70,7 +82,21 @@ export function SupportTicketsView() {
         loadData()
     }, [statusFilter, priorityFilter])
 
-    const loadData = async () => {
+    const loadData = async (forceString?: string) => {
+        const queryKey = JSON.stringify({
+            status: statusFilter,
+            priority: priorityFilter,
+            search: searchQuery // Note: searchQuery is usually only applied on explicit search button/enter, but let's include it
+        });
+
+        // Use cache if available and matching, unless forced
+        if (ticketCache && ticketCache.key === queryKey && !forceString) {
+            setTickets(ticketCache.data.tickets);
+            setStats(ticketCache.data.stats);
+            setLoading(false);
+            return;
+        }
+
         try {
             setLoading(true)
             const [ticketsResponse, statsResponse] = await Promise.all([
@@ -81,6 +107,16 @@ export function SupportTicketsView() {
                 }),
                 getSupportTicketStats(),
             ])
+
+            // Update cache
+            ticketCache = {
+                key: queryKey,
+                data: {
+                    tickets: ticketsResponse.tickets || [],
+                    stats: statsResponse
+                }
+            };
+
             setTickets(ticketsResponse.tickets || [])
             setStats(statsResponse)
         } catch (error) {
@@ -88,6 +124,13 @@ export function SupportTicketsView() {
         } finally {
             setLoading(false)
         }
+    }
+
+    // Wrapper for manual refresh button to bypass cache
+    const forceRefresh = () => {
+        // Clear cache for current view to force fetch
+        if (ticketCache) ticketCache = null;
+        loadData("force");
     }
 
     const handleSearch = () => {
@@ -397,7 +440,7 @@ export function SupportTicketsView() {
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={loadData}
+                                onClick={forceRefresh}
                                 disabled={loading}
                             >
                                 <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />

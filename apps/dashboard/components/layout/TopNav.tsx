@@ -25,6 +25,8 @@ import { ModeToggle } from "@/components/mode-toggle"
 
 import { useSession, signOut } from "next-auth/react"
 
+import Link from "next/link"
+
 interface TopNavProps {
     activeView: string
     onViewChange: (view: string) => void
@@ -35,6 +37,16 @@ export function TopNav({ activeView, onViewChange, navItems }: TopNavProps) {
     const { data: session } = useSession()
     const viewName = activeView.charAt(0).toUpperCase() + activeView.slice(1).replace("-", " ")
 
+    const getInitials = (name?: string | null) => {
+        if (!name) return "U"
+        const parts = name.trim().split(" ")
+        if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase()
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    }
+
+    // Determine display name: prefer name, fallback to email username, then "User"
+    const displayName = session?.user?.name || session?.user?.email?.split('@')[0] || "User"
+
     return (
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-background/80 backdrop-blur-sm px-6">
             <MobileSidebar activeView={activeView} onViewChange={onViewChange} navItems={navItems} />
@@ -43,7 +55,9 @@ export function TopNav({ activeView, onViewChange, navItems }: TopNavProps) {
                 <Breadcrumb className="hidden md:flex">
                     <BreadcrumbList>
                         <BreadcrumbItem>
-                            <BreadcrumbLink href="#" onClick={() => onViewChange('dashboard')} className="text-muted-foreground hover:text-primary">Home</BreadcrumbLink>
+                            <BreadcrumbLink asChild className="text-muted-foreground hover:text-primary">
+                                <Link href="/dashboard">Home</Link>
+                            </BreadcrumbLink>
                         </BreadcrumbItem>
                         <BreadcrumbSeparator />
                         <BreadcrumbItem>
@@ -76,11 +90,12 @@ export function TopNav({ activeView, onViewChange, navItems }: TopNavProps) {
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="relative h-8 w-8 rounded-none">
+                        <Button variant="ghost" className="relative h-10 flex items-center gap-2 px-2 hover:bg-muted/50 rounded-none">
+                            <span className="hidden sm:inline-block text-sm font-medium">{displayName}</span>
                             <Avatar className="h-8 w-8 border border-border rounded-none">
-                                <AvatarImage src={session?.user?.image || "/avatars/01.png"} alt="@user" className="rounded-none" />
-                                <AvatarFallback className="bg-muted text-primary rounded-none">
-                                    {session?.user?.name ? session.user.name.substring(0, 2).toUpperCase() : "U"}
+                                <AvatarImage src={session?.user?.image || "/avatars/01.png"} alt="@user" className="rounded-none object-cover" />
+                                <AvatarFallback className="bg-muted text-primary rounded-none font-medium text-xs">
+                                    {getInitials(displayName)}
                                 </AvatarFallback>
                             </Avatar>
                         </Button>
@@ -89,7 +104,7 @@ export function TopNav({ activeView, onViewChange, navItems }: TopNavProps) {
                         <DropdownMenuLabel className="font-normal">
                             <div className="flex flex-col space-y-1">
                                 <p className="text-sm font-medium leading-none">
-                                    {session?.user?.name || "User"}
+                                    {displayName}
                                 </p>
                                 <p className="text-xs leading-none text-muted-foreground">
                                     {session?.user?.email || "user@example.com"}

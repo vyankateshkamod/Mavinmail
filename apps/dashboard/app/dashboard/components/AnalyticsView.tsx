@@ -26,22 +26,43 @@ import { cn } from '@/lib/utils';
 
 type TimeRange = '7d' | '30d';
 
+// Module-level cache
+const analyticsCache: Record<string, { trends: UsageTrend[], stats: DashboardStats | null }> = {};
+
 export function AnalyticsView() {
     const [timeRange, setTimeRange] = useState<TimeRange>('7d');
-    const [trends, setTrends] = useState<UsageTrend[]>([]);
-    const [stats, setStats] = useState<DashboardStats | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    // Initialize from cache if available
+    const [trends, setTrends] = useState<UsageTrend[]>(analyticsCache['7d']?.trends || []);
+    const [stats, setStats] = useState<DashboardStats | null>(analyticsCache['7d']?.stats || null);
+    const [isLoading, setIsLoading] = useState(!analyticsCache['7d']);
 
     useEffect(() => {
         const fetchData = async () => {
+            // Check cache first
+            if (analyticsCache[timeRange]) {
+                setTrends(analyticsCache[timeRange].trends);
+                setStats(analyticsCache[timeRange].stats);
+                setIsLoading(false);
+                return;
+            }
+
             setIsLoading(true);
             const days = timeRange === '7d' ? 7 : 30;
             const [trendsData, statsData] = await Promise.all([
                 getUsageTrends(days),
                 getDashboardStats(),
             ]);
+
+            // Update state
             setTrends(trendsData);
             setStats(statsData);
+
+            // Update cache
+            analyticsCache[timeRange] = {
+                trends: trendsData,
+                stats: statsData
+            };
+
             setIsLoading(false);
         };
         fetchData();

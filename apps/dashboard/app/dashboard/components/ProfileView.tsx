@@ -9,14 +9,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Loader2, CheckCircle2, AlertCircle, Eye, EyeOff } from "lucide-react"
 import { getUserProfile, updateUserProfile, type UserProfile } from "@/lib/api"
 
+// Module-level cache
+let profileCache: UserProfile | null = null;
+
 export function ProfileView() {
-    const [profile, setProfile] = useState<UserProfile>({
+    const [profile, setProfile] = useState<UserProfile>(profileCache || {
         firstName: '',
         lastName: '',
         email: ''
     })
-    const [originalEmail, setOriginalEmail] = useState('')
-    const [isLoading, setIsLoading] = useState(true)
+    const [originalEmail, setOriginalEmail] = useState(profileCache?.email || '')
+    const [isLoading, setIsLoading] = useState(!profileCache)
     const [isSaving, setIsSaving] = useState(false)
     const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
     const [errorMessage, setErrorMessage] = useState('')
@@ -40,11 +43,17 @@ export function ProfileView() {
     }, [profile.email, originalEmail])
 
     const loadProfile = async () => {
+        if (profileCache) {
+            setIsLoading(false);
+            return;
+        }
+
         try {
             setIsLoading(true)
             const data = await getUserProfile()
             setProfile(data)
             setOriginalEmail(data.email)
+            profileCache = data;
         } catch (error) {
             console.error('Failed to load profile:', error)
         } finally {
@@ -76,6 +85,14 @@ export function ProfileView() {
                 setOriginalEmail(profile.email)
                 setShowPasswordField(false)
                 setCurrentPassword('')
+
+                // Update cache with new values
+                if (profileCache) {
+                    profileCache = { ...profile };
+                } else {
+                    profileCache = profile;
+                }
+
                 setTimeout(() => setSaveStatus('idle'), 3000)
             } else {
                 setSaveStatus('error')

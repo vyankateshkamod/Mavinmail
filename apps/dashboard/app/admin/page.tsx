@@ -4,10 +4,9 @@ import * as React from "react"
 import { useSession } from "next-auth/react"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { TopNav } from "@/components/layout/TopNav"
-import { LayoutDashboard, Users, BarChart3, Shield, Settings, Ticket } from "lucide-react"
+import { LayoutDashboard, Users, Shield, Settings, Ticket } from "lucide-react"
 import { AdminDashboardView } from "./components/AdminDashboardView"
 import { UserManagementView } from "./components/UserManagementView"
-import { PlatformAnalyticsView } from "./components/PlatformAnalyticsView"
 import { AuditLogsView } from "./components/AuditLogsView"
 import { AdminSettingsView } from "./components/AdminSettingsView"
 import { SupportTicketsView } from "./components/SupportTicketsView"
@@ -38,11 +37,7 @@ export default function AdminPage() {
         { name: "Overview", view: "overview", icon: LayoutDashboard },
         { name: "Users", view: "users", icon: Users },
         { name: "Support Tickets", view: "support-tickets", icon: Ticket },
-        { name: "Analytics", view: "analytics", icon: BarChart3 },
-        // Only show Audit Logs for Super Admin
-        ...(session?.user?.role === "SUPER_ADMIN" ? [
-            { name: "Audit Logs", view: "audit-logs", icon: Shield }
-        ] : []),
+        { name: "Audit Logs", view: "audit-logs", icon: Shield },
         { name: "Settings", view: "settings", icon: Settings },
     ]
 
@@ -54,8 +49,6 @@ export default function AdminPage() {
                 return <UserManagementView />
             case "support-tickets":
                 return <SupportTicketsView />
-            case "analytics":
-                return <PlatformAnalyticsView />
             case "audit-logs":
                 return <AuditLogsView />
             case "settings":

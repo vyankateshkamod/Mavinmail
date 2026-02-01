@@ -16,9 +16,12 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog"
 
+// Module-level cache
+let connectedAccountsCache: any[] | null = null;
+
 export function ConnectedAccountsView() {
-    const [accounts, setAccounts] = useState<ConnectedAccount[]>([])
-    const [isLoading, setIsLoading] = useState(true)
+    const [accounts, setAccounts] = useState<ConnectedAccount[]>(connectedAccountsCache || [])
+    const [isLoading, setIsLoading] = useState(!connectedAccountsCache)
     const [error, setError] = useState<string>("")
     const [connectingAccountId, setConnectingAccountId] = useState<number | null>(null)
     const [disconnectingAccountId, setDisconnectingAccountId] = useState<number | null>(null)
@@ -46,7 +49,12 @@ export function ConnectedAccountsView() {
     }, [])
 
     // Fetch accounts from backend
-    const fetchAccounts = useCallback(async () => {
+    const fetchAccounts = useCallback(async (force = false) => {
+        if (connectedAccountsCache && !force) {
+            setIsLoading(false);
+            return;
+        }
+
         setIsLoading(true)
         setError("")
         try {
@@ -57,6 +65,7 @@ export function ConnectedAccountsView() {
                 lastSync: formatLastSync(acc.lastSync),
             }))
             setAccounts(transformedAccounts)
+            connectedAccountsCache = transformedAccounts;
         } catch (err: any) {
             console.error("Failed to fetch accounts:", err)
             setError(err.message || "Failed to load connected accounts")

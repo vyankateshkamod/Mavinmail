@@ -40,19 +40,35 @@ interface UseDashboardReturn {
  * Custom hook for fetching and managing dashboard data
  * Handles loading states, errors, and provides refresh capability
  */
+// Module-level cache to persist data across tab switches
+let cachedData: DashboardData | null = null;
+let cachedLastUpdated: Date | null = null;
+
+/**
+ * Custom hook for fetching and managing dashboard data
+ * Handles loading states, errors, and provides refresh capability
+ */
 export function useDashboard(): UseDashboardReturn {
-    const [data, setData] = useState<DashboardData>({
+    // Initialize state from cache if available
+    const [data, setData] = useState<DashboardData>(cachedData || {
         stats: null,
         activities: [],
         trends: [],
         userEmail: '',
         userName: 'User',
     });
-    const [isLoading, setIsLoading] = useState(true);
+    // If we have cached data, we're not loading initially
+    const [isLoading, setIsLoading] = useState(!cachedData);
     const [error, setError] = useState<string | null>(null);
-    const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+    const [lastUpdated, setLastUpdated] = useState<Date | null>(cachedLastUpdated);
 
-    const fetchData = useCallback(async () => {
+    const fetchData = useCallback(async (force = false) => {
+        // If we have clean cached data and aren't forcing a refresh, do nothing
+        if (cachedData && !force) {
+            setIsLoading(false);
+            return;
+        }
+
         setIsLoading(true);
         setError(null);
 
@@ -66,7 +82,7 @@ export function useDashboard(): UseDashboardReturn {
                 getConnectedAccounts(),
             ]);
 
-            setData({
+            const newData = {
                 stats: {
                     ...stats,
                     connectedAccounts: accounts.length,
@@ -77,8 +93,16 @@ export function useDashboard(): UseDashboardReturn {
                 userName: (profile.firstName && profile.lastName)
                     ? `${profile.firstName} ${profile.lastName}`
                     : (profile.firstName || profile.email.split('@')[0] || 'User'),
-            });
-            setLastUpdated(new Date());
+            };
+
+            // Update state and cache
+            setData(newData);
+            cachedData = newData;
+
+            const newDate = new Date();
+            setLastUpdated(newDate);
+            cachedLastUpdated = newDate;
+
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to load dashboard data';
             setError(message);
@@ -88,16 +112,22 @@ export function useDashboard(): UseDashboardReturn {
         }
     }, []);
 
-    // Fetch data on mount
+    // Fetch data on mount only if no cache
     useEffect(() => {
-        fetchData();
+        // Pass false to use cache if available
+        fetchData(false);
+    }, [fetchData]);
+
+    // Manual refresh function that forces an update
+    const handleRefresh = useCallback(async () => {
+        await fetchData(true);
     }, [fetchData]);
 
     return {
         data,
         isLoading,
         error,
-        refresh: fetchData,
+        refresh: handleRefresh,
         lastUpdated,
     };
 }

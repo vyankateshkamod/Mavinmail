@@ -338,6 +338,18 @@ export const getActivityFeed = async (limit: number = 10): Promise<ActivityItem[
 };
 
 /**
+ * Delete a specific activity log
+ */
+export const deleteActivity = async (id: number): Promise<{ success: boolean }> => {
+  try {
+    const response = await api.delete(`/dashboard/activity/${id}`);
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.error || 'Failed to delete activity log');
+  }
+};
+
+/**
  * Fetch usage trends for charts
  * Falls back to mock data if backend endpoint is unavailable
  */
@@ -698,6 +710,58 @@ export const setDefaultAIModel = async (id: number): Promise<{ success: boolean;
     return response.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.error || 'Failed to set default model');
+  }
+};
+
+// ====================================================================
+// System Settings API Functions (Admin)
+// ====================================================================
+
+export interface SystemSettings {
+  maintenance_mode: boolean;
+  maintenance_message: string;
+  system_announcement: string;
+  system_announcement_active: boolean;
+}
+
+// Get all system settings
+export const getSystemSettings = async (): Promise<SystemSettings> => {
+  try {
+    const response = await api.get('/admin/settings');
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.error || 'Failed to get system settings');
+  }
+};
+
+// Update system settings
+export const updateSystemSettings = async (settings: Partial<SystemSettings>): Promise<SystemSettings> => {
+  try {
+    const response = await api.put('/admin/settings', settings);
+    return response.data.settings;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.error || 'Failed to update system settings');
+  }
+};
+
+// Get public system status (no auth required)
+export const getPublicSystemStatus = async (): Promise<{
+  maintenanceMode: boolean;
+  maintenanceMessage: string;
+  announcement: string;
+  announcementActive: boolean;
+}> => {
+  try {
+    const response = await api.get('/system/status');
+    return response.data;
+  } catch (error: any) {
+    // In case of error, return defaults (system is up)
+    return {
+      maintenanceMode: false,
+      maintenanceMessage: '',
+      announcement: '',
+      announcementActive: false,
+    };
   }
 };
 

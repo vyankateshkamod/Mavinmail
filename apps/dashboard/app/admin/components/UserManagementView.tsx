@@ -27,9 +27,12 @@ import { Label } from "@/components/ui/label"
 import { createAdminUser } from "@/lib/api"
 import { Loader2, Plus, Copy, Check } from "lucide-react"
 
+// Module-level cache
+let usersCache: any[] | null = null;
+
 export function UserManagementView() {
-    const [users, setUsers] = React.useState<any[]>([]);
-    const [loading, setLoading] = React.useState(true);
+    const [users, setUsers] = React.useState<any[]>(usersCache || []);
+    const [loading, setLoading] = React.useState(!usersCache);
     const [isCreateOpen, setIsCreateOpen] = React.useState(false)
     const [creating, setCreating] = React.useState(false)
     const [formData, setFormData] = React.useState({
@@ -42,11 +45,20 @@ export function UserManagementView() {
     const [createdUser, setCreatedUser] = React.useState<{ email: string, password: string } | null>(null)
     const [copied, setCopied] = React.useState(false)
 
-    const fetchUsers = async () => {
+    const fetchUsers = async (force = false) => {
+        if (usersCache && !force) {
+            setUsers(usersCache);
+            setLoading(false);
+            return;
+        }
+
         try {
             setLoading(true)
             const result = await getUsers({ page: 1, limit: 20 });
-            setUsers(result.users || []);
+            const newUsers = result.users || [];
+
+            setUsers(newUsers);
+            usersCache = newUsers;
         } catch (err) {
             console.error(err);
         } finally {
@@ -68,7 +80,7 @@ export function UserManagementView() {
                 password: formData.password
             })
             // Refresh list
-            fetchUsers()
+            fetchUsers(true)
         } catch (error) {
             console.error("Failed to create user:", error)
             alert("Failed to create user. Please check the inputs and try again.")

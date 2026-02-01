@@ -43,8 +43,10 @@ function CustomTooltip({ active, payload, label }: {
     );
 }
 
+// Safe date formatting that doesn't shift timezones
 function formatDate(dateStr: string): string {
-    const date = new Date(dateStr);
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const date = new Date(y, m - 1, d); // Local time construction
     return date.toLocaleDateString('en-US', { weekday: 'short' });
 }
 
@@ -82,7 +84,7 @@ export function ActivityChart({ trends, isLoading }: ActivityChartProps) {
 
     // Transform data for recharts - handle both backend breakdown format and flat format
     const chartData = trends.map((trend) => {
-        // Backend returns breakdown as object, mock data has flat properties
+        // Backend returns breakdown as object
         const breakdown = trend.breakdown;
         return {
             name: formatDate(trend.date),
@@ -90,6 +92,7 @@ export function ActivityChart({ trends, isLoading }: ActivityChartProps) {
             Drafts: breakdown?.draft ?? trend.draft ?? 0,
             Enhance: breakdown?.enhance ?? trend.enhance ?? 0,
             'RAG Queries': breakdown?.rag ?? trend.rag ?? 0,
+            Digest: breakdown?.digest ?? trend.digest ?? 0, // Added missing Digest metric
         };
     });
 
@@ -144,6 +147,12 @@ export function ActivityChart({ trends, isLoading }: ActivityChartProps) {
                                 dataKey="RAG Queries"
                                 stackId="a"
                                 fill={ACTION_COLORS.rag_query}
+                                radius={[0, 0, 0, 0]}
+                            />
+                            <Bar
+                                dataKey="Digest"
+                                stackId="a"
+                                fill="#f43f5e" // Rose-500 for Digests
                                 radius={[4, 4, 0, 0]}
                             />
                         </BarChart>

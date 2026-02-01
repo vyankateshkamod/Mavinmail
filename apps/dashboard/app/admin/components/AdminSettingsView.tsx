@@ -1,12 +1,13 @@
 "use client"
 
 import * as React from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
+import { Textarea } from "@/components/ui/textarea"
 import {
     Table,
     TableBody,
@@ -34,19 +35,30 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Plus, Trash2, Star, Loader2, RefreshCw, AlertCircle, CheckCircle2 } from "lucide-react"
+import { Plus, Trash2, Star, Loader2, RefreshCw, AlertCircle, CheckCircle2, Save, AlertTriangle } from "lucide-react"
 import {
     getAdminModels,
     createAIModel,
     updateAIModel,
     deleteAIModel,
     setDefaultAIModel,
+    getSystemSettings,
+    updateSystemSettings,
     type AIModel,
+    type SystemSettings,
 } from "@/lib/api"
 
 export function AdminSettingsView() {
     const [models, setModels] = React.useState<AIModel[]>([])
+    const [settings, setSettings] = React.useState<SystemSettings>({
+        maintenance_mode: false,
+        maintenance_message: "",
+        system_announcement: "",
+        system_announcement_active: false,
+    });
+
     const [loading, setLoading] = React.useState(true)
+    const [settingsLoading, setSettingsLoading] = React.useState(false)
     const [error, setError] = React.useState<string | null>(null)
     const [success, setSuccess] = React.useState<string | null>(null)
 
@@ -64,23 +76,27 @@ export function AdminSettingsView() {
     const [deleteTarget, setDeleteTarget] = React.useState<AIModel | null>(null)
     const [deleteLoading, setDeleteLoading] = React.useState(false)
 
-    // Fetch models on mount
-    const fetchModels = React.useCallback(async () => {
+    // Fetch data on mount
+    const fetchData = React.useCallback(async () => {
         setLoading(true)
         setError(null)
         try {
-            const data = await getAdminModels()
-            setModels(data)
+            const [modelsData, settingsData] = await Promise.all([
+                getAdminModels(),
+                getSystemSettings()
+            ]);
+            setModels(modelsData)
+            setSettings(settingsData)
         } catch (err: any) {
-            setError(err.message || "Failed to load models")
+            setError(err.message || "Failed to load settings")
         } finally {
             setLoading(false)
         }
     }, [])
 
     React.useEffect(() => {
-        fetchModels()
-    }, [fetchModels])
+        fetchData()
+    }, [fetchData])
 
     // Clear success message after 3 seconds
     React.useEffect(() => {
@@ -90,7 +106,8 @@ export function AdminSettingsView() {
         }
     }, [success])
 
-    // Handle Add Model
+    // --- AI Model Handlers ---
+
     const handleAddModel = async () => {
         if (!newModel.modelId.trim() || !newModel.displayName.trim()) {
             setError("Model ID and Display Name are required")
@@ -104,7 +121,7 @@ export function AdminSettingsView() {
             setSuccess("Model added successfully")
             setIsAddDialogOpen(false)
             setNewModel({ modelId: "", displayName: "", description: "", isActive: true })
-            await fetchModels()
+            await fetchData() // Reload all data
         } catch (err: any) {
             setError(err.message || "Failed to add model")
         } finally {
@@ -112,7 +129,6 @@ export function AdminSettingsView() {
         }
     }
 
-    // Handle Toggle Active
     const handleToggleActive = async (model: AIModel) => {
         try {
             await updateAIModel(model.id, { isActive: !model.isActive })
@@ -125,7 +141,6 @@ export function AdminSettingsView() {
         }
     }
 
-    // Handle Set Default
     const handleSetDefault = async (model: AIModel) => {
         if (model.isDefault) return
 
@@ -140,7 +155,6 @@ export function AdminSettingsView() {
         }
     }
 
-    // Handle Delete
     const handleDelete = async () => {
         if (!deleteTarget) return
 
@@ -149,7 +163,7 @@ export function AdminSettingsView() {
             await deleteAIModel(deleteTarget.id)
             setSuccess("Model deleted successfully")
             setDeleteTarget(null)
-            await fetchModels()
+            await fetchData()
         } catch (err: any) {
             setError(err.message || "Failed to delete model")
         } finally {
@@ -157,22 +171,54 @@ export function AdminSettingsView() {
         }
     }
 
+    // --- System Settings Handlers ---
+
+    const handleSettingChange = (key: keyof SystemSettings, value: any) => {
+        setSettings(prev => ({
+            ...prev,
+            [key]: value
+        }))
+    }
+
+    const saveSettings = async () => {
+        setSettingsLoading(true)
+        setError(null)
+        try {
+            await updateSystemSettings(settings)
+            setSuccess("System settings updated successfully")
+        } catch (err: any) {
+            setError(err.message || "Failed to save settings")
+        } finally {
+            setSettingsLoading(false)
+        }
+    }
+
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Admin Settings</h1>
-                    <p className="text-muted-foreground">Manage AI models and system configuration</p>
+                    <p className="text-muted-foreground">Manage global system configuration and AI models</p>
                 </div>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={fetchModels}
-                    disabled={loading}
-                >
-                    <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-                    Refresh
-                </Button>
+                <div className="flex gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={fetchData}
+                        disabled={loading}
+                    >
+                        <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+                        Refresh
+                    </Button>
+                    <Button
+                        onClick={saveSettings}
+                        disabled={loading || settingsLoading}
+                        className="min-w-[100px]"
+                    >
+                        {settingsLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                        Save Changes
+                    </Button>
+                </div>
             </div>
 
             {/* Status Messages */}
@@ -189,7 +235,83 @@ export function AdminSettingsView() {
                 </div>
             )}
 
-            {/* AI Model Management Card */}
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+
+                {/* 1. Maintenance & System Controls */}
+                <Card className="bg-card border-border md:col-span-2">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <AlertTriangle className="w-5 h-5 text-amber-500" />
+                            System Controls
+                        </CardTitle>
+                        <CardDescription>
+                            manage maintenance mode and global announcements
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        {/* Maintenance Mode */}
+                        <div className="flex flex-col gap-4 border-b border-border pb-6">
+                            <div className="flex items-center justify-between">
+                                <div className="space-y-0.5">
+                                    <Label className="text-base">Maintenance Mode</Label>
+                                    <p className="text-sm text-muted-foreground">
+                                        Disable login/signup and show a maintenance page to users
+                                    </p>
+                                </div>
+                                <Switch
+                                    checked={settings.maintenance_mode}
+                                    onCheckedChange={(checked) => handleSettingChange('maintenance_mode', checked)}
+                                />
+                            </div>
+                            {settings.maintenance_mode && (
+                                <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                                    <Label>Maintenance Message</Label>
+                                    <Textarea
+                                        placeholder="We are currently upgrading the system..."
+                                        value={settings.maintenance_message}
+                                        onChange={(e) => handleSettingChange('maintenance_message', e.target.value)}
+                                        className="resize-none"
+                                        rows={2}
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Global Announcement */}
+                        <div className="flex flex-col gap-4">
+                            <div className="flex items-center justify-between">
+                                <div className="space-y-0.5">
+                                    <Label className="text-base">Global Announcement</Label>
+                                    <p className="text-sm text-muted-foreground">
+                                        Display a banner at the top of the dashboard for all users
+                                    </p>
+                                </div>
+                                <Switch
+                                    checked={settings.system_announcement_active}
+                                    onCheckedChange={(checked) => handleSettingChange('system_announcement_active', checked)}
+                                />
+                            </div>
+                            {settings.system_announcement_active && (
+                                <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                                    <Label>Announcement Text</Label>
+                                    <Textarea
+                                        placeholder="New AI models are now available! Check settings to enable."
+                                        value={settings.system_announcement}
+                                        onChange={(e) => handleSettingChange('system_announcement', e.target.value)}
+                                        className="resize-none"
+                                        rows={2}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+
+
+
+            </div>
+
+            {/* 3. AI Model Management Card (Existing) */}
             <Card className="bg-card border-border">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0">
                     <div>

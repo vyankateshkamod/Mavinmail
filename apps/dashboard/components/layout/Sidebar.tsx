@@ -20,6 +20,7 @@ import {
     Calendar
 } from "lucide-react"
 import Image from "next/image"
+import Link from "next/link"
 import mavinlogo from "@/public/mavinlogo.png"
 
 interface NavItem {
@@ -53,14 +54,16 @@ export function Sidebar({ className, activeView, onViewChange, isCollapsed, togg
     return (
         <div className={cn("relative flex flex-col h-screen border-r border-sidebar-border bg-sidebar transition-all duration-300", isCollapsed ? "w-16" : "w-64", className)}>
             <div className="flex items-center h-16 px-4 border-b border-sidebar-border">
-                <Image
-                    src={mavinlogo}
-                    alt="MavinMail Logo"
-                    className="w-6 h-6 mr-2"
-                    width={24}
-                    height={24}
-                />
-                {!isCollapsed && <span className="text-lg font-bold text-sidebar-foreground tracking-wider">MavinMail</span>}
+                <Link href="/dashboard" className="flex items-center">
+                    <Image
+                        src={mavinlogo}
+                        alt="MavinMail Logo"
+                        className="w-6 h-6 mr-2"
+                        width={24}
+                        height={24}
+                    />
+                    {!isCollapsed && <span className="text-lg font-bold text-sidebar-foreground tracking-wider">MavinMail</span>}
+                </Link>
             </div>
 
             <div className="flex-1 py-4">

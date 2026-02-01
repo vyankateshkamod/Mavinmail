@@ -10,10 +10,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react"
 import { getAvailableModels, getModelPreference, updateModelPreference, type AIModel } from "@/lib/api"
 
+// Module-level cache
+let settingsCache: {
+    models: AIModel[];
+    selectedModel: string;
+} | null = null;
+
 export function SettingsView() {
-    const [models, setModels] = React.useState<AIModel[]>([])
-    const [selectedModel, setSelectedModel] = React.useState<string>("")
-    const [loading, setLoading] = React.useState(true)
+    const [models, setModels] = React.useState<AIModel[]>(settingsCache?.models || [])
+    const [selectedModel, setSelectedModel] = React.useState<string>(settingsCache?.selectedModel || "")
+    const [loading, setLoading] = React.useState(!settingsCache)
     const [saving, setSaving] = React.useState(false)
     const [error, setError] = React.useState<string | null>(null)
     const [success, setSuccess] = React.useState<string | null>(null)
@@ -21,6 +27,11 @@ export function SettingsView() {
     // Fetch models and user preference on mount
     React.useEffect(() => {
         const fetchData = async () => {
+            if (settingsCache) {
+                setLoading(false)
+                return
+            }
+
             try {
                 const [availableModels, currentPreference] = await Promise.all([
                     getAvailableModels(),
@@ -29,12 +40,21 @@ export function SettingsView() {
                 setModels(availableModels)
 
                 // If user has a preference, use it. Otherwise use the default model from the list
+                let newSelectedModel = "";
                 if (currentPreference) {
-                    setSelectedModel(currentPreference)
+                    newSelectedModel = currentPreference
                 } else {
                     const defaultModel = availableModels.find(m => m.isDefault)
-                    setSelectedModel(defaultModel?.modelId || availableModels[0]?.modelId || "")
+                    newSelectedModel = defaultModel?.modelId || availableModels[0]?.modelId || ""
                 }
+                setSelectedModel(newSelectedModel);
+
+                // Update cache
+                settingsCache = {
+                    models: availableModels,
+                    selectedModel: newSelectedModel
+                };
+
             } catch (err: any) {
                 setError("Failed to load settings")
             } finally {
@@ -61,6 +81,12 @@ export function SettingsView() {
             await updateModelPreference(modelId)
             // Also save to localStorage for immediate use in API calls
             localStorage.setItem('selectedModel', modelId)
+
+            // Update cache
+            if (settingsCache) {
+                settingsCache.selectedModel = modelId;
+            }
+
             setSuccess("Model preference saved")
         } catch (err: any) {
             setError(err.message || "Failed to save preference")

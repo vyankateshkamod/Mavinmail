@@ -68,7 +68,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         return {
                             id: data.user.id.toString(), // NextAuth expects string IDs
                             email: data.user.email,
-                            name: data.user.name,
+                            name: data.user.firstName && data.user.lastName
+                                ? `${data.user.firstName} ${data.user.lastName}`
+                                : (data.user.firstName || data.user.email.split('@')[0]),
                             role: data.user.role, // Include role from backend
                             token: data.token, // We need to persist this token
                             ...data.user
@@ -120,6 +122,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 token.accessToken = user.token;
                 token.userId = user.id;
                 token.role = user.role; // Store role in JWT
+                token.name = user.name; // Store name in JWT
             }
             return token;
         },
@@ -128,6 +131,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 session.accessToken = token.accessToken;
                 session.user.id = token.userId;
                 session.user.role = token.role; // Expose role in session
+                session.user.name = token.name; // Ensure name is passed to session
             }
             return session;
         },
