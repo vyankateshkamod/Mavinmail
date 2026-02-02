@@ -43,7 +43,7 @@ export default function OnboardingScreen({ login, isMaintenanceMode = false, mai
                 {/* Logo & Header */}
                 <div className="flex flex-col items-center mb-10 text-center">
                     <div className="w-16 h-16 mb-6 rounded-2xl bg-gradient-to-tr from-[#171717] to-[#262626] border border-[#333] flex items-center justify-center shadow-2xl shadow-black/50 overflow-hidden">
-                        <img src="/logo.png" alt="Mavin Logo" className="w-full h-full object-cover" />
+                        <img src="/mavinlogo.png" alt="Mavin Logo" className="w-full h-full object-cover" />
                     </div>
                     <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent mb-2">
                         Welcome to Mavin
