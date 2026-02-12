@@ -1,4 +1,5 @@
 import { OpenRouterService } from "./openrouterService.js";
+import { resolveUserModel } from "../utils/modelHelper.js";
 
 /**
  * Interface for structured email input
@@ -151,7 +152,9 @@ CRITICAL RULES:
 - The IDs MUST be: ${emailIds.join(', ')}
 - Return ONLY the JSON array, no other text`;
 
-  const rawContent = await OpenRouterService.generateContent(prompt, model);
+  // Resolve model if not provided
+  const resolvedModel = model || await resolveUserModel();
+  const rawContent = await OpenRouterService.generateContent(prompt, resolvedModel);
 
   // Extract JSON array
   const arrayMatch = rawContent.match(/\[[\s\S]*\]/);
