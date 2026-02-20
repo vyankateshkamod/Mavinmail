@@ -1,22 +1,24 @@
 import { Router } from 'express';
-import { summarizeEmail, getAutocomplete, askQuestionAboutEmails, enhanceText, draftReply } from '../controllers/aiController.js';
+import { summarizeEmail, getAutocomplete, askQuestionAboutEmails, enhanceText, draftReply, askQuestionStream } from '../controllers/aiController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
+import { aiLimiter, aiStreamLimiter } from '../middleware/rateLimiter.js';
+import { validate } from '../middleware/validate.js';
+import { checkCredits, FEATURE_COSTS } from '../middleware/checkCredits.js';
+import { summarizeSchema, autocompleteSchema, askQuestionSchema, enhanceTextSchema, draftReplySchema } from '../schemas/index.js';
 
 const router = Router();
 
-// This entire route is protected. A user must be logged in to use AI features.
+// All AI routes require authentication
 router.use(authMiddleware);
 
-// POST /api/ai/summarize
-router.post('/summarize', summarizeEmail);
+// Apply standard AI rate limit to all routes
+router.use(aiLimiter);
 
-router.post('/autocomplete', getAutocomplete);
-
-router.post('/ask', askQuestionAboutEmails);
-
-router.post('/enhance', enhanceText); // <-- New Text Enhancement Route
-
-router.post('/draft-reply', draftReply);
-
+router.post('/summarize', checkCredits(FEATURE_COSTS.SUMMARIZE_EMAIL), validate(summarizeSchema), summarizeEmail);
+router.post('/autocomplete', checkCredits(FEATURE_COSTS.AUTOCOMPLETE), validate(autocompleteSchema), getAutocomplete);
+router.post('/ask', checkCredits(FEATURE_COSTS.ASK_QUESTION), validate(askQuestionSchema), askQuestionAboutEmails);
+router.post('/ask/stream', aiStreamLimiter, checkCredits(FEATURE_COSTS.ASK_QUESTION), validate(askQuestionSchema), askQuestionStream);
+router.post('/enhance', checkCredits(FEATURE_COSTS.ENHANCE_TEXT), validate(enhanceTextSchema), enhanceText);
+router.post('/draft-reply', checkCredits(FEATURE_COSTS.DRAFT_REPLY), validate(draftReplySchema), draftReply);
 
 export default router;
