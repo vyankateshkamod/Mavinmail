@@ -6,7 +6,7 @@ import EnhancementMenu from "./EnhancementMenu.js"; // <-- Import our new compon
 import Tooltip from "./Tooltip";
 
 //rag
-import { askQuestion, askQuestionStream, syncModelPreference, enhanceText } from "../services/api.js";
+import { askQuestion, askQuestionStream, syncModelPreference, enhanceText, getUserCredits } from "../services/api.js";
 import { ChatMessage, Message } from "./ChatMessage.js";
 
 interface ChatScreenProps {
@@ -53,7 +53,15 @@ function ChatScreen({ isLoggedIn, onLoginClick, activeConversationId, onConversa
   }, [showDatePicker]);
 
 
-  const [isRagEnabled, setIsRagEnabled] = useState(false); // RAG Default OFF or ON based on preference? Let's default OFF or maintain state. User said "small icon... on and off button".
+  const [isRagEnabled, setIsRagEnabled] = useState(false);
+  const [userCredits, setUserCredits] = useState<number | null>(null);
+
+  // Fetch credits on mount
+  useEffect(() => {
+    if (isLoggedIn) {
+      getUserCredits().then(data => setUserCredits(data.credits)).catch(() => setUserCredits(null));
+    }
+  }, [isLoggedIn]);
 
 
   const [isDraftMode, setIsDraftMode] = useState(false);
@@ -196,12 +204,18 @@ function ChatScreen({ isLoggedIn, onLoginClick, activeConversationId, onConversa
         }
       );
     } catch (err: any) {
+      const is403 = err?.response?.status === 403;
+      const errorText = is403
+        ? "⚠️ Insufficient credits. Please upgrade or top-up in your Profile to continue using AI features."
+        : `Sorry, an error occurred: ${err.message || "Please try again."}`;
       const errorMessage: Message = {
         id: Date.now() + 1,
         sender: "ai",
-        text: `Sorry, an error occurred: ${err.message || "Please try again."}`,
+        text: errorText,
       };
       setMessages((prev) => [...prev, errorMessage]);
+      // Refresh credits after error
+      if (is403) getUserCredits().then(data => setUserCredits(data.credits)).catch(() => { });
     } finally {
       setIsRagLoading(false);
     }
@@ -749,8 +763,8 @@ function ChatScreen({ isLoggedIn, onLoginClick, activeConversationId, onConversa
 
         <div className="flex justify-between items-center">
           {isLoggedIn && (
-            <div className="px-2 sm:px-2.5 lg:px-3 py-1 sm:py-1.5 lg:py-2 rounded-lg text-[10px] sm:text-[11px] lg:text-xs xl:text-sm font-semibold text-[#22d3ee] border-1 border-[#22d3ee]/50 hover:bg-[#262626] hover:border-[#22d3ee]  ">
-              <button>⚡️ 20 Updrage For More &gt;</button>
+            <div className="px-2 sm:px-2.5 lg:px-3 py-1 sm:py-1.5 lg:py-2 rounded-lg text-[10px] sm:text-[11px] lg:text-xs xl:text-sm font-semibold text-[#22d3ee] border border-[#22d3ee]/50 hover:bg-[#262626] hover:border-[#22d3ee]">
+              <span>⚡️ {userCredits === -1 ? '∞ Unlimited' : userCredits !== null ? userCredits : '—'} credits{userCredits !== null && userCredits === 0 ? ' — Upgrade >' : ''}</span>
             </div>
           )}
 

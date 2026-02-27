@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { User, LogOut, CheckCircle2, AlertCircle, RefreshCw, Save, Mail, Calendar, Clock } from 'lucide-react';
-import { getUserStats, getConnectionStatus, updateUserProfile, getUserProfile } from '../services/api';
+import { User, LogOut, CheckCircle2, AlertCircle, RefreshCw, Save, Mail, Calendar, Clock, Zap, Crown, Coins } from 'lucide-react';
+import { getUserStats, getConnectionStatus, updateUserProfile, getUserProfile, getUserCredits, upgradeToPro, topUpCredits } from '../services/api';
 
 interface ProfileScreenProps {
   onLogout: () => void;
@@ -18,6 +18,11 @@ interface PersonalInfo {
   email: string;
 }
 
+interface CreditData {
+  credits: number;
+  plan: string;
+}
+
 export default function ProfileScreen({ onLogout }: ProfileScreenProps) {
   const [stats, setStats] = useState<StatsData | null>(null);
   const [connection, setConnection] = useState<{ isConnected: boolean; email?: string } | null>(null);
@@ -33,6 +38,14 @@ export default function ProfileScreen({ onLogout }: ProfileScreenProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
+  // Credit system state
+  const [creditData, setCreditData] = useState<CreditData | null>(null);
+  const [proCode, setProCode] = useState('');
+  const [topUpCode, setTopUpCode] = useState('');
+  const [proLoading, setProLoading] = useState(false);
+  const [topUpLoading, setTopUpLoading] = useState(false);
+  const [creditMessage, setCreditMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -41,12 +54,14 @@ export default function ProfileScreen({ onLogout }: ProfileScreenProps) {
     try {
       setError(null);
       setIsLoading(true);
-      const [statsData, connectionData] = await Promise.all([
+      const [statsData, connectionData, creditsData] = await Promise.all([
         getUserStats(),
-        getConnectionStatus()
+        getConnectionStatus(),
+        getUserCredits()
       ]);
       setStats(statsData);
       setConnection(connectionData);
+      setCreditData(creditsData);
 
       try {
         const profileData = await getUserProfile();
@@ -90,6 +105,38 @@ export default function ProfileScreen({ onLogout }: ProfileScreenProps) {
     setPersonalInfo(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleUpgradePro = async () => {
+    if (!proCode.trim()) return;
+    setProLoading(true);
+    setCreditMessage(null);
+    try {
+      const result = await upgradeToPro(proCode.trim());
+      setCreditData({ credits: result.credits, plan: result.plan });
+      setCreditMessage({ type: 'success', text: result.message });
+      setProCode('');
+    } catch (err: any) {
+      setCreditMessage({ type: 'error', text: err.response?.data?.error || 'Invalid promo code.' });
+    } finally {
+      setProLoading(false);
+    }
+  };
+
+  const handleTopUp = async () => {
+    if (!topUpCode.trim()) return;
+    setTopUpLoading(true);
+    setCreditMessage(null);
+    try {
+      const result = await topUpCredits(topUpCode.trim());
+      setCreditData({ credits: result.credits, plan: result.plan });
+      setCreditMessage({ type: 'success', text: result.message });
+      setTopUpCode('');
+    } catch (err: any) {
+      setCreditMessage({ type: 'error', text: err.response?.data?.error || 'Invalid top-up code.' });
+    } finally {
+      setTopUpLoading(false);
+    }
+  };
+
   const getInitials = () => {
     const first = personalInfo.firstName?.[0]?.toUpperCase() || '';
     const last = personalInfo.lastName?.[0]?.toUpperCase() || '';
@@ -108,6 +155,13 @@ export default function ProfileScreen({ onLogout }: ProfileScreenProps) {
       </div>
     );
   }
+
+  const isAdmin = creditData?.plan === 'ADMIN';
+  const isPro = creditData?.plan === 'PRO';
+  const isUnlimited = isAdmin || creditData?.credits === -1;
+  const credits = creditData?.credits ?? 0;
+  const maxCredits = isPro ? 10000 : 50;
+  const progressPercent = isUnlimited ? 100 : Math.min((credits / maxCredits) * 100, 100);
 
   return (
     <div className="flex h-screen w-full flex-col bg-[#0A0A0A] text-white font-sans selection:bg-[#22d3ee] selection:text-black">
@@ -146,9 +200,106 @@ export default function ProfileScreen({ onLogout }: ProfileScreenProps) {
             </div>
             <h2 className="mt-4 text-xl font-bold text-white">{personalInfo.firstName} {personalInfo.lastName}</h2>
             <p className="text-gray-500 text-sm">{personalInfo.email}</p>
+            {/* Plan Badge */}
+            <span className={`mt-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${isAdmin
+              ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+              : isPro
+                ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                : 'bg-[#22d3ee]/20 text-[#22d3ee] border border-[#22d3ee]/30'
+              }`}>
+              {isAdmin ? '🛡️ ADMIN' : isPro ? '⭐ PRO' : '✦ FREE'}
+            </span>
           </div>
 
-          {/* 2. Stats Grid */}
+          {/* 2. Credit Balance */}
+          <div className="bg-[#121212] border border-[#262626] rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-gray-300 flex items-center gap-1.5">
+                <Coins className="w-4 h-4 text-[#22d3ee]" /> Credits
+              </span>
+              <span className="text-lg font-bold text-[#22d3ee]">{isUnlimited ? '∞' : credits.toLocaleString()}</span>
+            </div>
+            {!isUnlimited && (
+              <>
+                <div className="w-full bg-[#262626] rounded-full h-2 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-[#22d3ee] to-[#3b82f6] transition-all duration-500"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+                <p className="text-[10px] text-gray-500 text-right">{credits.toLocaleString()} / {maxCredits.toLocaleString()} credits</p>
+              </>
+            )}
+            {isUnlimited && (
+              <p className="text-[10px] text-emerald-400 text-right">Unlimited admin access</p>
+            )}
+          </div>
+
+          {/* Credit Message */}
+          {creditMessage && (
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${creditMessage.type === 'success'
+              ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
+              : 'bg-red-500/10 border border-red-500/30 text-red-400'
+              }`}>
+              {creditMessage.type === 'success' ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+              {creditMessage.text}
+            </div>
+          )}
+
+          {/* 3. Upgrade / Top-Up — hidden for admins */}
+          {!isAdmin && (
+            <div className="space-y-3">
+              {!isPro && (
+                <div className="bg-[#121212] border border-[#262626] rounded-xl p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                    <Crown className="w-4 h-4 text-yellow-400" /> Upgrade to Pro — $30
+                  </div>
+                  <p className="text-xs text-gray-500">Get 10,000 credits and Pro status.</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={proCode}
+                      onChange={(e) => setProCode(e.target.value)}
+                      placeholder="Enter promo code"
+                      className="flex-1 bg-[#0A0A0A] border border-[#333] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#22d3ee] transition-colors placeholder-gray-600"
+                    />
+                    <button
+                      onClick={handleUpgradePro}
+                      disabled={proLoading || !proCode.trim()}
+                      className="px-4 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/30 rounded-lg text-xs font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {proLoading ? '...' : 'Upgrade'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="bg-[#121212] border border-[#262626] rounded-xl p-4 space-y-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                  <Zap className="w-4 h-4 text-emerald-400" /> Top-Up Credits — $5
+                </div>
+                <p className="text-xs text-gray-500">Add 1,000 credits instantly.</p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={topUpCode}
+                    onChange={(e) => setTopUpCode(e.target.value)}
+                    placeholder="Enter top-up code"
+                    className="flex-1 bg-[#0A0A0A] border border-[#333] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500/50 transition-colors placeholder-gray-600"
+                  />
+                  <button
+                    onClick={handleTopUp}
+                    disabled={topUpLoading || !topUpCode.trim()}
+                    className="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {topUpLoading ? '...' : 'Top-Up'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 4. Stats Grid */}
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-[#121212] border border-[#262626] rounded-xl p-3 flex flex-col items-center justify-center hover:border-[#22d3ee]/30 transition-colors">
               <div className="mb-2 p-2 bg-[#22d3ee]/10 rounded-full text-[#22d3ee]">
@@ -175,7 +326,7 @@ export default function ProfileScreen({ onLogout }: ProfileScreenProps) {
             </div>
           </div>
 
-          {/* 3. Personal Info Form */}
+          {/* 5. Personal Info Form */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider ml-1">Account Details</h3>
 
@@ -233,7 +384,7 @@ export default function ProfileScreen({ onLogout }: ProfileScreenProps) {
             </button>
           </div>
 
-          {/* 4. Danger / Logout Zone */}
+          {/* 6. Danger / Logout Zone */}
           <div className="pt-6 border-t border-[#262626]">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -267,3 +418,4 @@ export default function ProfileScreen({ onLogout }: ProfileScreenProps) {
     </div>
   );
 }
+
