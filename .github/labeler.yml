@@ -1,0 +1,35 @@
+
+bug:
+  - title: ["bug", "unexpected behavior", "not working"]
+
+feature:
+  - title: ["feature", "add", "support", "implement"]
+
+improvement:
+  - title: ["improve", "refactor", "enhance", "optimize"]
+
+error:
+  - title: ["error"]
+  - body: ["error"]
+
+crash:
+  - title: ["crash"]
+  - body: ["crash"]
+
+fail:
+  - title: ["fail", "failure"]
+  - body: ["fail", "failure"]
+
+
+area:app:
+  - title: ["app"]
+  - body: ["app"]
+
+area:extension:
+  - title: ["extension", "chrome extension"]
+
+area:api:
+  - title: ["api", "backend", "server"]
+
+area:dashboard:
+  - title: ["dashboard", "admin panel", "ui"]
