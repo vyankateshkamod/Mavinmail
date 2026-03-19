@@ -2,13 +2,46 @@ import { Queue, Worker, Job } from 'bullmq';
 import { Redis } from 'ioredis';
 import prisma from '../utils/prisma.js';
 import { getLatestEmails } from './emailService.js';
-// import { generateSummary } from './aiService.js'; // Assuming this exists or similar
+import { summarizeEmailBatch } from './aiService.js';
+import logger from '../utils/logger.js';
 
-const connection = new Redis({
-    maxRetriesPerRequest: null,
-});
+// --- Redis Connection Setup ---
+const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+const enableScheduler = !!process.env.REDIS_URL; // Only enable if explicitly set
 
-export const taskQueue = new Queue('scheduledTasks', { connection });
+let connection: Redis | null = null;
+let taskQueue: Queue | null = null;
+let worker: Worker | null = null;
+
+if (enableScheduler) {
+    try {
+        logger.info('[Scheduler] Initializing Redis connection...');
+        connection = new Redis(redisUrl, {
+            maxRetriesPerRequest: null,
+            retryStrategy: (times) => {
+                if (times > 3) {
+                    logger.warn('[Scheduler] Redis connection failed too many times, disabling scheduler');
+                    return null; // Stop retrying
+                }
+                return Math.min(times * 50, 2000);
+            }
+        });
+
+        connection.on('error', (err) => {
+            logger.warn('[Scheduler] Redis connection error (scheduler will be limited):', err.message);
+        });
+
+        connection.on('ready', () => {
+            logger.info('[Scheduler] Redis connected successfully');
+        });
+
+        taskQueue = new Queue('scheduledTasks', { connection });
+    } catch (error) {
+        logger.error('[Scheduler] Failed to initialize Redis:', error);
+    }
+} else {
+    logger.info('[Scheduler] Redis not configured (REDIS_URL missing). Scheduler disabled.');
+}
 
 // Define interface for Task Data
 interface TaskJobData {
@@ -19,45 +52,46 @@ interface TaskJobData {
     frequency?: string;
 }
 
-const worker = new Worker<TaskJobData>(
-    'scheduledTasks',
-    async (job: Job<TaskJobData>) => {
-        const { taskId, userId, type, config } = job.data;
-        console.log(`[Scheduler] Processing task ${taskId} type=${type} for user ${userId}`);
+if (connection && enableScheduler) {
+    worker = new Worker<TaskJobData>(
+        'scheduledTasks',
+        async (job: Job<TaskJobData>) => {
+            const { taskId, userId, type, config } = job.data;
+            logger.info(`[Scheduler] Processing task ${taskId} type=${type} for user ${userId}`);
 
-        try {
-            if (type === 'morning-briefing') {
-                await handleMorningBriefing(userId);
-            } else if (type === 'check-reply') {
-                await handleCheckReply(userId, config);
+            try {
+                if (type === 'morning-briefing') {
+                    await handleMorningBriefing(userId);
+                } else if (type === 'check-reply') {
+                    await handleCheckReply(userId, config);
+                }
+
+                // Update task status for one-time tasks
+                if (job.data.frequency === 'once') {
+                    await prisma.scheduledTask.update({
+                        where: { id: taskId },
+                        data: { status: 'completed' }
+                    });
+                }
+
+                logger.info(`[Scheduler] Task ${taskId} completed successfully`);
+            } catch (error) {
+                logger.error(`[Scheduler] Task ${taskId} failed:`, error);
+                throw error;
             }
+        },
+        { connection }
+    );
 
-            // Update task status for one-time tasks
-            if (job.data.frequency === 'once') {
-                await prisma.scheduledTask.update({
-                    where: { id: taskId },
-                    data: { status: 'completed' }
-                });
-            }
+    worker.on('completed', (job) => {
+        logger.info(`[Scheduler] Job ${job.id} completed!`);
+    });
 
-            console.log(`[Scheduler] Task ${taskId} completed successfully`);
-        } catch (error) {
-            console.error(`[Scheduler] Task ${taskId} failed:`, error);
-            throw error;
-        }
-    },
-    { connection }
-);
+    worker.on('failed', (job, err) => {
+        logger.error(`[Scheduler] Job ${job?.id} failed with ${err.message}`);
+    });
+}
 
-worker.on('completed', (job) => {
-    console.log(`[Scheduler] Job ${job.id} completed!`);
-});
-
-worker.on('failed', (job, err) => {
-    console.error(`[Scheduler] Job ${job?.id} failed with ${err.message}`);
-});
-
-import { summarizeEmailBatch } from './aiService.js';
 
 // ... (existing imports)
 
@@ -67,11 +101,11 @@ async function handleMorningBriefing(userId: number) {
         const emails = await getLatestEmails(userId, 10);
 
         if (emails.length === 0) {
-            console.log(`[MorningBriefing] No emails to summarize for user ${userId}`);
+            logger.info(`[MorningBriefing] No emails to summarize for user ${userId}`);
             return;
         }
 
-        console.log(`[MorningBriefing] Generating summary for ${emails.length} emails...`);
+        logger.info(`[MorningBriefing] Generating summary for ${emails.length} emails...`);
 
         // 2. Prepare for AI
         const emailInputs = emails.map(e => ({
@@ -87,7 +121,7 @@ async function handleMorningBriefing(userId: number) {
         try {
             summaryJsonStr = await summarizeEmailBatch(emailInputs);
         } catch (aiError: any) {
-            console.error(`[MorningBriefing] AI summarization failed:`, aiError.message);
+            logger.error(`[MorningBriefing] AI summarization failed:`, aiError.message);
         }
 
         // 4. Format Content
@@ -133,7 +167,7 @@ async function handleMorningBriefing(userId: number) {
                     });
                 }
             } catch (pError) {
-                console.error("Parse error, using basic fallback");
+                logger.error("Parse error, using basic fallback");
                 summaryText = `📬 **Morning Briefing** - ${date}\n\n`;
                 summaryText += emails.map((e, i) => `${i + 1}. **${e.subject}**\n   From: ${e.from}\n`).join('\n');
             }
@@ -153,10 +187,10 @@ async function handleMorningBriefing(userId: number) {
             }
         });
 
-        console.log(`[MorningBriefing] Successfully created and stored digest for user ${userId}`);
+        logger.info(`[MorningBriefing] Successfully created and stored digest for user ${userId}`);
 
     } catch (error) {
-        console.error(`[MorningBriefing] Critical failure for user ${userId}:`, error);
+        logger.error(`[MorningBriefing] Critical failure for user ${userId}:`, error);
         try {
             await prisma.usageLog.create({
                 data: {
@@ -167,7 +201,7 @@ async function handleMorningBriefing(userId: number) {
                 }
             });
         } catch (dbError) {
-            console.error("[MorningBriefing] Failed to log failure to DB", dbError);
+            logger.error("[MorningBriefing] Failed to log failure to DB", dbError);
         }
     }
 }
@@ -175,7 +209,7 @@ async function handleMorningBriefing(userId: number) {
 async function handleCheckReply(userId: number, config: any) {
     // Placeholder for check-reply logic
     // specific threadId check, etc.
-    console.log(`[CheckReply] Checking reply for user ${userId} with config`, config);
+    logger.info(`[CheckReply] Checking reply for user ${userId} with config`, config);
 }
 
 // ============================================================================
@@ -222,8 +256,16 @@ export const scheduleTask = async (
     }
 
     // Pass frequency in job data so worker knows if it's 'once'
-    await taskQueue.add(type, { taskId: task.id, userId, type, config, frequency }, jobOptions);
-    console.log(`[Scheduler] Scheduled task ${task.id} (${type})`);
+    if (taskQueue) {
+        try {
+            await taskQueue.add(type, { taskId: task.id, userId, type, config, frequency }, jobOptions);
+            logger.info(`[Scheduler] Scheduled task ${task.id} (${type})`);
+        } catch (error) {
+            logger.error(`[Scheduler] Failed to add task ${task.id} to queue (Redis likely down):`, error);
+        }
+    } else {
+        logger.warn(`[Scheduler] Queue not available. Task ${task.id} saved to DB but NOT scheduled.`);
+    }
 
     return task;
 };
@@ -238,43 +280,45 @@ export const deleteTask = async (taskId: number) => {
             taskInfo = { type: task.type, frequency: task.frequency, time: task.time };
         }
     } catch (e) {
-        console.warn('[Scheduler] Could not fetch task info before deletion');
+        logger.warn('[Scheduler] Could not fetch task info before deletion');
     }
 
     // 2. Remove from DB
     try {
         await prisma.scheduledTask.delete({ where: { id: taskId } });
-        console.log(`[Scheduler] Task ${taskId} deleted from DB`);
+        logger.info(`[Scheduler] Task ${taskId} deleted from DB`);
     } catch (error: any) {
         if (error.code === 'P2025') {
-            console.warn(`[Scheduler] Task ${taskId} already deleted from DB`);
+            logger.warn(`[Scheduler] Task ${taskId} already deleted from DB`);
         } else {
             throw error;
         }
     }
 
     // 3. Remove from Queue (best effort, don't fail if queue removal fails)
-    try {
-        if (taskInfo && taskInfo.frequency === 'daily') {
-            // For repeatable jobs, we need to remove by the repeat key
-            const [hour, minute] = taskInfo.time.split(':').map(Number);
-            const cronPattern = `${minute} ${hour} * * *`;
+    if (taskQueue) {
+        try {
+            if (taskInfo && taskInfo.frequency === 'daily') {
+                // For repeatable jobs, we need to remove by the repeat key
+                const [hour, minute] = taskInfo.time.split(':').map(Number);
+                const cronPattern = `${minute} ${hour} * * *`;
 
-            // Remove repeatable by key - BullMQ requires jobId and repeat options
-            await taskQueue.removeRepeatableByKey(`${taskInfo.type}:task-${taskId}:::${cronPattern}`);
-            console.log(`[Scheduler] Removed repeatable job for task ${taskId}`);
-        } else {
-            // For one-time delayed jobs
-            const jobs = await taskQueue.getJobs(['delayed', 'waiting']);
-            const job = jobs.find(j => j.data.taskId === taskId);
-            if (job) {
-                await job.remove();
-                console.log(`[Scheduler] Removed delayed job for task ${taskId}`);
+                // Remove repeatable by key - BullMQ requires jobId and repeat options
+                await taskQueue.removeRepeatableByKey(`${taskInfo.type}:task-${taskId}:::${cronPattern}`);
+                logger.info(`[Scheduler] Removed repeatable job for task ${taskId}`);
+            } else {
+                // For one-time delayed jobs
+                const jobs = await taskQueue.getJobs(['delayed', 'waiting']);
+                const job = jobs.find(j => j.data.taskId === taskId);
+                if (job) {
+                    await job.remove();
+                    logger.info(`[Scheduler] Removed delayed job for task ${taskId}`);
+                }
             }
+        } catch (queueError: any) {
+            // Log but don't throw - DB deletion is the critical part
+            logger.warn(`[Scheduler] Queue cleanup warning for task ${taskId}:`, queueError.message);
         }
-    } catch (queueError: any) {
-        // Log but don't throw - DB deletion is the critical part
-        console.warn(`[Scheduler] Queue cleanup warning for task ${taskId}:`, queueError.message);
     }
 };
 
