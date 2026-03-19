@@ -1,9 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../utils/prisma.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { encrypt } from './encryptionService.js';
-
-const prisma = new PrismaClient();
 
 export const createUser = async (email: string, password: string) => {
   const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -19,7 +17,12 @@ export const createUser = async (email: string, password: string) => {
       // preferredModel is null by default - resolved dynamically from DB/env
     },
   });
-  return user;
+
+  const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET!, {
+    expiresIn: '30d',
+  });
+
+  return { user, token };
 };
 
 export const loginUser = async (email: string, password: string) => {

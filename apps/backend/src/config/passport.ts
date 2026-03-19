@@ -1,9 +1,7 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../utils/prisma.js';
 import { encrypt } from '../services/encryptionService.js';
-
-const prisma = new PrismaClient();
 
 passport.use(
   new GoogleStrategy(
@@ -13,9 +11,9 @@ passport.use(
       callbackURL: process.env.GOOGLE_CALLBACK_URL!,
       passReqToCallback: true,
     },
-    async (req: any, accessToken, refreshToken, profile, done) => {
+    async (req, accessToken, refreshToken, profile, done) => {
       try {
-        const userId = req.user.userId; // We'll get this from a JWT middleware
+        const userId = req.user!.userId; // Set by authMiddleware
 
         // Encrypt tokens for secure storage
         const encryptedAccessToken = encrypt(accessToken);
@@ -42,7 +40,7 @@ passport.use(
           },
         });
 
-        return done(null, profile);
+        return done(null, profile as any);
       } catch (error) {
         return done(error, false);
       }
