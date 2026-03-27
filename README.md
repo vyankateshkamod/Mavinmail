@@ -4,7 +4,8 @@ Mavinmail is a powerful, AI-driven email assistant built as a modern monorepo. I
 
 ---
 
-## 🏗 Project Architecture
+## 🏗 Project Architecture  
+
 
 ```mermaid
 graph TD
