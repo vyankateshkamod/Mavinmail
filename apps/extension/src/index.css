@@ -1,0 +1,35 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --color-brand-cyan: #22d3ee;
+  --color-brand-dark: #121212;
+  --color-brand-surface: #1e1e1e;
+}
+
+html {
+  transition: font-size 0.2s ease-out;
+}
+
+body {
+  @apply bg-white text-gray-900 dark:bg-[#121212] dark:text-white;
+}
+
+/* Custom scrollbar to match the design */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-[#2a2d36];
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-[#3a3e4a];
+}

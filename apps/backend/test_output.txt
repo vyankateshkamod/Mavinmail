@@ -1,0 +1,475 @@
+[19:25:15.373] [31mERROR[39m: [36mError fetching message IDs:[39m
+    [35mservice[39m: "mavinmail-api"
+    err: {
+      "type": "GaxiosError",
+      "message": "Unexpected Gaxios Error: A dynamic import callback was invoked without --experimental-vm-modules",
+      "stack":
+          Error: Unexpected Gaxios Error
+              at Gaxios._request (/Users/ronakrahane/Desktop/Mavinmail/node_modules/gaxios/src/gaxios.ts:229:15)
+              at OAuth2Client.requestAsync (/Users/ronakrahane/Desktop/Mavinmail/node_modules/google-auth-library/build/src/auth/oauth2client.js:463:20)
+              at createAPIRequestAsync (/Users/ronakrahane/Desktop/Mavinmail/node_modules/googleapis-common/build/src/apirequest.js:308:25)
+              at getLatestMessageIds (/Users/ronakrahane/Desktop/Mavinmail/apps/backend/src/services/emailService.ts:243:26)
+              at Object.<anonymous> (/Users/ronakrahane/Desktop/Mavinmail/apps/backend/tests/emailService.test.ts:83:28)
+          caused by: TypeError: A dynamic import callback was invoked without --experimental-vm-modules
+              at importModuleDynamicallyCallback (node:internal/modules/esm/utils:270:11)
+              at Function.#getFetch (/Users/ronakrahane/Desktop/Mavinmail/node_modules/gaxios/src/gaxios.ts:675:10)
+              at Gaxios._defaultAdapter (/Users/ronakrahane/Desktop/Mavinmail/node_modules/gaxios/src/gaxios.ts:153:30)
+              at Gaxios._request (/Users/ronakrahane/Desktop/Mavinmail/node_modules/gaxios/src/gaxios.ts:194:41)
+              at Gaxios._request (/Users/ronakrahane/Desktop/Mavinmail/node_modules/gaxios/src/gaxios.ts:244:21)
+              at OAuth2Client.requestAsync (/Users/ronakrahane/Desktop/Mavinmail/node_modules/google-auth-library/build/src/auth/oauth2client.js:463:20)
+              at createAPIRequestAsync (/Users/ronakrahane/Desktop/Mavinmail/node_modules/googleapis-common/build/src/apirequest.js:308:25)
+              at getLatestMessageIds (/Users/ronakrahane/Desktop/Mavinmail/apps/backend/src/services/emailService.ts:243:26)
+              at Object.<anonymous> (/Users/ronakrahane/Desktop/Mavinmail/apps/backend/tests/emailService.test.ts:83:28)
+      "config": {
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=10&q=category%3Aprimary",
+        "method": "GET",
+        "apiVersion": "",
+        "userAgentDirectives": [
+          {
+            "product": "google-api-nodejs-client",
+            "version": "8.0.1",
+            "comment": "gzip"
+          }
+        ],
+        "headers": {},
+        "params": {
+          "maxResults": 10,
+          "q": "category:primary"
+        },
+        "retry": true,
+        "responseType": "unknown",
+        "retryConfig": {
+          "currentRetryAttempt": 2,
+          "retry": 3,
+          "httpMethodsToRetry": [
+            "GET",
+            "HEAD",
+            "PUT",
+            "OPTIONS",
+            "DELETE"
+          ],
+          "noResponseRetries": 2,
+          "retryDelayMultiplier": 2,
+          "timeOfFirstRequest": 1771336514764,
+          "totalTimeout": 9007199254740991,
+          "maxRetryDelay": 9007199254740991,
+          "statusCodesToRetry": [
+            [
+              100,
+              199
+            ],
+            [
+              408,
+              408
+            ],
+            [
+              429,
+              429
+            ],
+            [
+              500,
+              599
+            ]
+          ]
+        }
+      },
+      "code": "ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING_FLAG"
+    }
+[19:25:16.005] [31mERROR[39m: [36mError fetching message IDs:[39m
+    [35mservice[39m: "mavinmail-api"
+    err: {
+      "type": "GaxiosError",
+      "message": "Unexpected Gaxios Error: A dynamic import callback was invoked without --experimental-vm-modules",
+      "stack":
+          Error: Unexpected Gaxios Error
+              at Gaxios._request (/Users/ronakrahane/Desktop/Mavinmail/node_modules/gaxios/src/gaxios.ts:229:15)
+              at OAuth2Client.requestAsync (/Users/ronakrahane/Desktop/Mavinmail/node_modules/google-auth-library/build/src/auth/oauth2client.js:463:20)
+              at createAPIRequestAsync (/Users/ronakrahane/Desktop/Mavinmail/node_modules/googleapis-common/build/src/apirequest.js:308:25)
+              at getLatestMessageIds (/Users/ronakrahane/Desktop/Mavinmail/apps/backend/src/services/emailService.ts:243:26)
+              at Object.<anonymous> (/Users/ronakrahane/Desktop/Mavinmail/apps/backend/tests/emailService.test.ts:94:28)
+          caused by: TypeError: A dynamic import callback was invoked without --experimental-vm-modules
+              at importModuleDynamicallyCallback (node:internal/modules/esm/utils:270:11)
+              at Function.#getFetch (/Users/ronakrahane/Desktop/Mavinmail/node_modules/gaxios/src/gaxios.ts:675:10)
+              at Gaxios._defaultAdapter (/Users/ronakrahane/Desktop/Mavinmail/node_modules/gaxios/src/gaxios.ts:153:30)
+              at Gaxios._request (/Users/ronakrahane/Desktop/Mavinmail/node_modules/gaxios/src/gaxios.ts:194:41)
+              at Gaxios._request (/Users/ronakrahane/Desktop/Mavinmail/node_modules/gaxios/src/gaxios.ts:244:21)
+              at OAuth2Client.requestAsync (/Users/ronakrahane/Desktop/Mavinmail/node_modules/google-auth-library/build/src/auth/oauth2client.js:463:20)
+              at createAPIRequestAsync (/Users/ronakrahane/Desktop/Mavinmail/node_modules/googleapis-common/build/src/apirequest.js:308:25)
+              at getLatestMessageIds (/Users/ronakrahane/Desktop/Mavinmail/apps/backend/src/services/emailService.ts:243:26)
+              at Object.<anonymous> (/Users/ronakrahane/Desktop/Mavinmail/apps/backend/tests/emailService.test.ts:94:28)
+      "config": {
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=10&q=category%3Aprimary",
+        "method": "GET",
+        "apiVersion": "",
+        "userAgentDirectives": [
+          {
+            "product": "google-api-nodejs-client",
+            "version": "8.0.1",
+            "comment": "gzip"
+          }
+        ],
+        "headers": {},
+        "params": {
+          "maxResults": 10,
+          "q": "category:primary"
+        },
+        "retry": true,
+        "responseType": "unknown",
+        "retryConfig": {
+          "currentRetryAttempt": 2,
+          "retry": 3,
+          "httpMethodsToRetry": [
+            "GET",
+            "HEAD",
+            "PUT",
+            "OPTIONS",
+            "DELETE"
+          ],
+          "noResponseRetries": 2,
+          "retryDelayMultiplier": 2,
+          "timeOfFirstRequest": 1771336515402,
+          "totalTimeout": 9007199254740991,
+          "maxRetryDelay": 9007199254740991,
+          "statusCodesToRetry": [
+            [
+              100,
+              199
+            ],
+            [
+              408,
+              408
+            ],
+            [
+              429,
+              429
+            ],
+            [
+              500,
+              599
+            ]
+          ]
+        }
+      },
+      "code": "ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING_FLAG"
+    }
+[19:25:16.617] [31mERROR[39m: [36mFailed to fetch specific email msg_123:[39m
+    [35mservice[39m: "mavinmail-api"
+    err: {
+      "type": "GaxiosError",
+      "message": "Unexpected Gaxios Error: A dynamic import callback was invoked without --experimental-vm-modules",
+      "stack":
+          Error: Unexpected Gaxios Error
+              at Gaxios._request (/Users/ronakrahane/Desktop/Mavinmail/node_modules/gaxios/src/gaxios.ts:229:15)
+              at OAuth2Client.requestAsync (/Users/ronakrahane/Desktop/Mavinmail/node_modules/google-auth-library/build/src/auth/oauth2client.js:463:20)
+              at createAPIRequestAsync (/Users/ronakrahane/Desktop/Mavinmail/node_modules/googleapis-common/build/src/apirequest.js:308:25)
+              at getEmailById (/Users/ronakrahane/Desktop/Mavinmail/apps/backend/src/services/emailService.ts:269:21)
+              at Object.<anonymous> (/Users/ronakrahane/Desktop/Mavinmail/apps/backend/tests/emailService.test.ts:125:28)
+          caused by: TypeError: A dynamic import callback was invoked without --experimental-vm-modules
+              at importModuleDynamicallyCallback (node:internal/modules/esm/utils:270:11)
+              at Function.#getFetch (/Users/ronakrahane/Desktop/Mavinmail/node_modules/gaxios/src/gaxios.ts:675:10)
+              at Gaxios._defaultAdapter (/Users/ronakrahane/Desktop/Mavinmail/node_modules/gaxios/src/gaxios.ts:153:30)
+              at Gaxios._request (/Users/ronakrahane/Desktop/Mavinmail/node_modules/gaxios/src/gaxios.ts:194:41)
+              at Gaxios._request (/Users/ronakrahane/Desktop/Mavinmail/node_modules/gaxios/src/gaxios.ts:244:21)
+              at OAuth2Client.requestAsync (/Users/ronakrahane/Desktop/Mavinmail/node_modules/google-auth-library/build/src/auth/oauth2client.js:463:20)
+              at createAPIRequestAsync (/Users/ronakrahane/Desktop/Mavinmail/node_modules/googleapis-common/build/src/apirequest.js:308:25)
+              at getEmailById (/Users/ronakrahane/Desktop/Mavinmail/apps/backend/src/services/emailService.ts:269:21)
+              at Object.<anonymous> (/Users/ronakrahane/Desktop/Mavinmail/apps/backend/tests/emailService.test.ts:125:28)
+      "config": {
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/msg_123?format=metadata",
+        "method": "GET",
+        "apiVersion": "",
+        "userAgentDirectives": [
+          {
+            "product": "google-api-nodejs-client",
+            "version": "8.0.1",
+            "comment": "gzip"
+          }
+        ],
+        "headers": {},
+        "params": {
+          "format": "metadata"
+        },
+        "retry": true,
+        "responseType": "unknown",
+        "retryConfig": {
+          "currentRetryAttempt": 2,
+          "retry": 3,
+          "httpMethodsToRetry": [
+            "GET",
+            "HEAD",
+            "PUT",
+            "OPTIONS",
+            "DELETE"
+          ],
+          "noResponseRetries": 2,
+          "retryDelayMultiplier": 2,
+          "timeOfFirstRequest": 1771336516012,
+          "totalTimeout": 9007199254740991,
+          "maxRetryDelay": 9007199254740991,
+          "statusCodesToRetry": [
+            [
+              100,
+              199
+            ],
+            [
+              408,
+              408
+            ],
+            [
+              429,
+              429
+            ],
+            [
+              500,
+              599
+            ]
+          ]
+        }
+      },
+      "code": "ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING_FLAG"
+    }
+[19:25:17.224] [31mERROR[39m: [36mFailed to fetch specific email msg_big:[39m
+    [35mservice[39m: "mavinmail-api"
+    err: {
+      "type": "GaxiosError",
+      "message": "Unexpected Gaxios Error: A dynamic import callback was invoked without --experimental-vm-modules",
+      "stack":
+          Error: Unexpected Gaxios Error
+              at Gaxios._request (/Users/ronakrahane/Desktop/Mavinmail/node_modules/gaxios/src/gaxios.ts:229:15)
+              at OAuth2Client.requestAsync (/Users/ronakrahane/Desktop/Mavinmail/node_modules/google-auth-library/build/src/auth/oauth2client.js:463:20)
+              at createAPIRequestAsync (/Users/ronakrahane/Desktop/Mavinmail/node_modules/googleapis-common/build/src/apirequest.js:308:25)
+              at getEmailById (/Users/ronakrahane/Desktop/Mavinmail/apps/backend/src/services/emailService.ts:269:21)
+              at Object.<anonymous> (/Users/ronakrahane/Desktop/Mavinmail/apps/backend/tests/emailService.test.ts:140:28)
+          caused by: TypeError: A dynamic import callback was invoked without --experimental-vm-modules
+              at importModuleDynamicallyCallback (node:internal/modules/esm/utils:270:11)
+              at Function.#getFetch (/Users/ronakrahane/Desktop/Mavinmail/node_modules/gaxios/src/gaxios.ts:675:10)
+              at Gaxios._defaultAdapter (/Users/ronakrahane/Desktop/Mavinmail/node_modules/gaxios/src/gaxios.ts:153:30)
+              at Gaxios._request (/Users/ronakrahane/Desktop/Mavinmail/node_modules/gaxios/src/gaxios.ts:194:41)
+              at Gaxios._request (/Users/ronakrahane/Desktop/Mavinmail/node_modules/gaxios/src/gaxios.ts:244:21)
+              at OAuth2Client.requestAsync (/Users/ronakrahane/Desktop/Mavinmail/node_modules/google-auth-library/build/src/auth/oauth2client.js:463:20)
+              at createAPIRequestAsync (/Users/ronakrahane/Desktop/Mavinmail/node_modules/googleapis-common/build/src/apirequest.js:308:25)
+              at getEmailById (/Users/ronakrahane/Desktop/Mavinmail/apps/backend/src/services/emailService.ts:269:21)
+              at Object.<anonymous> (/Users/ronakrahane/Desktop/Mavinmail/apps/backend/tests/emailService.test.ts:140:28)
+      "config": {
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/msg_big?format=metadata",
+        "method": "GET",
+        "apiVersion": "",
+        "userAgentDirectives": [
+          {
+            "product": "google-api-nodejs-client",
+            "version": "8.0.1",
+            "comment": "gzip"
+          }
+        ],
+        "headers": {},
+        "params": {
+          "format": "metadata"
+        },
+        "retry": true,
+        "responseType": "unknown",
+        "retryConfig": {
+          "currentRetryAttempt": 2,
+          "retry": 3,
+          "httpMethodsToRetry": [
+            "GET",
+            "HEAD",
+            "PUT",
+            "OPTIONS",
+            "DELETE"
+          ],
+          "noResponseRetries": 2,
+          "retryDelayMultiplier": 2,
+          "timeOfFirstRequest": 1771336516621,
+          "totalTimeout": 9007199254740991,
+          "maxRetryDelay": 9007199254740991,
+          "statusCodesToRetry": [
+            [
+              100,
+              199
+            ],
+            [
+              408,
+              408
+            ],
+            [
+              429,
+              429
+            ],
+            [
+              500,
+              599
+            ]
+          ]
+        }
+      },
+      "code": "ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING_FLAG"
+    }
+[19:25:17.227] [32mINFO[39m: [36mDEBUG: Fetching latest emails...[39m
+    [35mservice[39m: "mavinmail-api"
+[19:25:17.832] [31mERROR[39m: [36mError fetching latest emails:[39m
+    [35mservice[39m: "mavinmail-api"
+    err: {
+      "type": "GaxiosError",
+      "message": "Unexpected Gaxios Error: A dynamic import callback was invoked without --experimental-vm-modules",
+      "stack":
+          Error: Unexpected Gaxios Error
+              at Gaxios._request (/Users/ronakrahane/Desktop/Mavinmail/node_modules/gaxios/src/gaxios.ts:229:15)
+              at OAuth2Client.requestAsync (/Users/ronakrahane/Desktop/Mavinmail/node_modules/google-auth-library/build/src/auth/oauth2client.js:463:20)
+              at createAPIRequestAsync (/Users/ronakrahane/Desktop/Mavinmail/node_modules/googleapis-common/build/src/apirequest.js:308:25)
+              at getLatestEmails (/Users/ronakrahane/Desktop/Mavinmail/apps/backend/src/services/emailService.ts:82:26)
+              at Object.<anonymous> (/Users/ronakrahane/Desktop/Mavinmail/apps/backend/tests/emailService.test.ts:175:29)
+          caused by: TypeError: A dynamic import callback was invoked without --experimental-vm-modules
+              at importModuleDynamicallyCallback (node:internal/modules/esm/utils:270:11)
+              at Function.#getFetch (/Users/ronakrahane/Desktop/Mavinmail/node_modules/gaxios/src/gaxios.ts:675:10)
+              at Gaxios._defaultAdapter (/Users/ronakrahane/Desktop/Mavinmail/node_modules/gaxios/src/gaxios.ts:153:30)
+              at Gaxios._request (/Users/ronakrahane/Desktop/Mavinmail/node_modules/gaxios/src/gaxios.ts:194:41)
+              at Gaxios._request (/Users/ronakrahane/Desktop/Mavinmail/node_modules/gaxios/src/gaxios.ts:244:21)
+              at OAuth2Client.requestAsync (/Users/ronakrahane/Desktop/Mavinmail/node_modules/google-auth-library/build/src/auth/oauth2client.js:463:20)
+              at createAPIRequestAsync (/Users/ronakrahane/Desktop/Mavinmail/node_modules/googleapis-common/build/src/apirequest.js:308:25)
+              at getLatestEmails (/Users/ronakrahane/Desktop/Mavinmail/apps/backend/src/services/emailService.ts:82:26)
+              at Object.<anonymous> (/Users/ronakrahane/Desktop/Mavinmail/apps/backend/tests/emailService.test.ts:175:29)
+      "config": {
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=5&q=category%3Aprimary",
+        "method": "GET",
+        "apiVersion": "",
+        "userAgentDirectives": [
+          {
+            "product": "google-api-nodejs-client",
+            "version": "8.0.1",
+            "comment": "gzip"
+          }
+        ],
+        "headers": {},
+        "params": {
+          "maxResults": 5,
+          "q": "category:primary"
+        },
+        "retry": true,
+        "responseType": "unknown",
+        "retryConfig": {
+          "currentRetryAttempt": 2,
+          "retry": 3,
+          "httpMethodsToRetry": [
+            "GET",
+            "HEAD",
+            "PUT",
+            "OPTIONS",
+            "DELETE"
+          ],
+          "noResponseRetries": 2,
+          "retryDelayMultiplier": 2,
+          "timeOfFirstRequest": 1771336517228,
+          "totalTimeout": 9007199254740991,
+          "maxRetryDelay": 9007199254740991,
+          "statusCodesToRetry": [
+            [
+              100,
+              199
+            ],
+            [
+              408,
+              408
+            ],
+            [
+              429,
+              429
+            ],
+            [
+              500,
+              599
+            ]
+          ]
+        }
+      },
+      "code": "ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING_FLAG"
+    }
+FAIL tests/emailService.test.ts (12.572 s)
+  Email Service (Gmail Integration)
+    getLatestMessageIds
+      ✕ should return a list of message IDs (643 ms)
+      ✓ should return empty array on API error (609 ms)
+    getEmailById
+      ✕ should fetch and parse a simplified email (611 ms)
+      ✕ should skip massive emails based on size estimate (606 ms)
+    getLatestEmails
+      ✕ should fetch and process multiple emails (607 ms)
+
+  ● Email Service (Gmail Integration) › getLatestMessageIds › should return a list of message IDs
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 4
+    + Received  + 1
+
+    - Array [
+    -   "msg_1",
+    -   "msg_2",
+    - ]
+    + Array []
+
+      82 |
+      83 |             const result = await getLatestMessageIds(1, 10);
+    > 84 |             expect(result).toEqual(['msg_1', 'msg_2']);
+         |                            ^
+      85 |             expect(mockGmailClient.users.messages.list).toHaveBeenCalledWith({
+      86 |                 userId: 'me',
+      87 |                 maxResults: 10,
+
+      at Object.<anonymous> (tests/emailService.test.ts:84:28)
+
+  ● Email Service (Gmail Integration) › getEmailById › should fetch and parse a simplified email
+
+    expect(received).not.toBeNull()
+
+    Received: null
+
+      125 |             const result = await getEmailById(1, 'msg_123');
+      126 |
+    > 127 |             expect(result).not.toBeNull();
+          |                                ^
+      128 |             expect(result.id).toBe('msg_123');
+      129 |             expect(result.subject).toBe('Test Subject');
+      130 |             expect(result.content).toBe('Hello World');
+
+      at Object.<anonymous> (tests/emailService.test.ts:127:32)
+
+  ● Email Service (Gmail Integration) › getEmailById › should skip massive emails based on size estimate
+
+    expect(jest.fn()).toHaveBeenCalledTimes(expected)
+
+    Expected number of calls: 1
+    Received number of calls: 0
+
+      142 |
+      143 |             // Should NOT call full fetch
+    > 144 |             expect(mockGmailClient.users.messages.get).toHaveBeenCalledTimes(1);
+          |                                                        ^
+      145 |         });
+      146 |     });
+      147 |
+
+      at Object.<anonymous> (tests/emailService.test.ts:144:56)
+
+  ● Email Service (Gmail Integration) › getLatestEmails › should fetch and process multiple emails
+
+    expect(received).toHaveLength(expected)
+
+    Expected length: 1
+    Received length: 0
+    Received array:  []
+
+      175 |             const results = await getLatestEmails(1, 5);
+      176 |
+    > 177 |             expect(results).toHaveLength(1);
+          |                             ^
+      178 |             expect(results[0].id).toBe('msg_1');
+      179 |             expect(results[0].subject).toBe('Invoice #101');
+      180 |             expect(results[0].fromDomain).toBe('stripe.com');
+
+      at Object.<anonymous> (tests/emailService.test.ts:177:29)
+
+Test Suites: 1 failed, 1 total
+Tests:       4 failed, 1 passed, 5 total
+Snapshots:   0 total
+Time:        12.78 s, estimated 22 s
+Ran all test suites matching tests/emailService.test.ts.

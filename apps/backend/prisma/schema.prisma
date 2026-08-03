@@ -1,0 +1,244 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ============================================================================
+// AI MODEL MANAGEMENT - Dynamic model configuration
+// ============================================================================
+
+model AIModel {
+  id          Int      @id @default(autoincrement())
+  modelId     String   @unique  // OpenRouter model ID e.g., "meta-llama/llama-3.3-70b-instruct:free"
+  displayName String             // User-friendly name e.g., "Llama 3.3 70B (Free)"
+  description String?            // Optional description
+  isActive    Boolean  @default(true)
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([isDefault])
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  firstName String?
+  lastName  String?
+  
+  // Role-Based Access Control
+  role        String   @default("USER")  // USER, ADMIN, SUPER_ADMIN
+  isActive    Boolean  @default(true)
+  lastLoginAt DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  connectedAccounts ConnectedAccount[]
+  preferredModel    String?            // Nullable - resolved from DB default or env
+  
+  // Credit System
+  credits     Int      @default(50)    // Default free credits
+  plan        String   @default("FREE")// FREE, PRO
+
+  
+  // New relations for dashboard analytics
+  usageLogs    UsageLog[]
+  syncHistory  SyncHistory[]
+  settings     UserSettings?
+  scheduledTasks ScheduledTask[]
+  
+  // Synced emails tracking (dedup for vector embeddings)
+  syncedEmails SyncedEmail[]
+  
+  // Admin audit logs (actions performed by this user)
+  auditLogs AuditLog[]
+  
+  // Support tickets
+  supportTickets  SupportTicket[] @relation("UserTickets")
+  resolvedTickets SupportTicket[] @relation("ResolvedTickets")
+  
+  @@index([role])
+  @@index([isActive])
+}
+
+model ConnectedAccount {
+  id           Int      @id @default(autoincrement())
+  provider     String   // e.g., "google"
+  email        String   // The user's Gmail address
+  accessToken  String   @db.Text // Encrypted access token
+  refreshToken String?  @db.Text // Encrypted refresh token (optional but recommended)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id])
+  userId       Int
+
+  // Sync state tracking
+  lastHistoryId    String?   // Gmail historyId for incremental sync
+  initialSyncDone  Boolean   @default(false)
+  lastSyncAt       DateTime?
+  totalEmailsSynced Int      @default(0)
+
+  @@unique([userId, provider])
+}
+
+// ============================================================================
+// SYNCED EMAIL TRACKING - Prevents duplicate vector embeddings
+// ============================================================================
+
+model SyncedEmail {
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  gmailMessageId  String   // Gmail's message ID (e.g., "18f3a4b2c1d0e5f6")
+  threadId        String?  // For reference
+  subject         String?  // For display in sync status
+  syncedAt        DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gmailMessageId])  // DB-level duplicate prevention
+  @@index([userId])
+}
+
+// ============================================================================
+// ANALYTICS MODELS - Track AI usage for dashboard metrics
+// ============================================================================
+
+// Track all AI actions for analytics and metrics
+model UsageLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  action    String   // "summarize", "draft", "enhance", "rag_query", "digest", "thread_summary"
+  metadata  Json?    // Additional context (e.g., enhancement type, email count)
+  success   Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// Track email sync history for account statistics
+model SyncHistory {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  provider   String   @default("google")
+  emailCount Int      // Number of emails synced in this batch
+  status     String   @default("success") // "success", "failed", "partial"
+  errorMsg   String?  // Error message if failed
+  syncedAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, syncedAt])
+  @@index([syncedAt])
+}
+
+// User settings for dashboard preferences
+model UserSettings {
+  id                 Int      @id @default(autoincrement())
+  userId             Int      @unique
+  autoReply          Boolean  @default(false)
+  draftMode          Boolean  @default(true)
+  smartSummary       Boolean  @default(true)
+  emailAlerts        Boolean  @default(true)
+  googleClientId     String?  // Optional custom Google OAuth Client ID
+  googleClientSecret String?  @db.Text // Optional encrypted custom Google OAuth Client Secret
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================================
+// TASK SCHEDULER MODELS
+// ============================================================================
+
+model ScheduledTask {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  type      String   // "morning-briefing", "check-reply", etc.
+  frequency String   // "daily", "weekly", "once"
+  time      String   // "08:00", or ISO date string for one-off
+  config    Json?    // Task specific config (e.g. threadId for reply check)
+  status    String   @default("active") // "active", "paused", "completed"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ============================================================================
+// ADMIN & AUDIT MODELS
+// ============================================================================
+
+// Track all admin actions for security audit
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  actorId    Int      // Admin user who performed action
+  action     String   // "USER_SUSPENDED", "ROLE_CHANGED", "USER_DELETED", etc.
+  targetType String   // "USER", "SYSTEM"
+  targetId   Int?     // ID of affected resource
+  metadata   Json?    // Additional context (old value, new value, etc.)
+  ipAddress  String?  // IP address of the admin
+  createdAt  DateTime @default(now())
+
+  actor User @relation(fields: [actorId], references: [id])
+
+  @@index([actorId, createdAt])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// SUPPORT TICKET MODELS
+// ============================================================================
+
+// Track user support requests - visible to ADMIN and SUPER_ADMIN only
+model SupportTicket {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  title       String
+  description String    @db.Text
+  source      String    @default("dashboard") // "dashboard", "extension"
+  status      String    @default("OPEN")      // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  priority    String    @default("MEDIUM")    // LOW, MEDIUM, HIGH, URGENT
+  adminNotes  String?   @db.Text              // Notes from admin handling the ticket
+  resolvedAt  DateTime?
+  resolvedBy  Int?                            // Admin who resolved the ticket
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user     User  @relation("UserTickets", fields: [userId], references: [id], onDelete: Cascade)
+  resolver User? @relation("ResolvedTickets", fields: [resolvedBy], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// SYSTEM CONFIGURATION - Global settings managed by admins
+// ============================================================================
+
+model SystemConfig {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique  // "maintenance_mode", "feature_smart_summary", etc.
+  value     String   @db.Text // JSON-encoded value for flexibility
+  updatedAt DateTime @updatedAt
+  updatedBy Int?     // Admin who last modified
+  
+  @@index([key])
+}
